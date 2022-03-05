@@ -70,40 +70,43 @@ P_X = DiscreteUniform(1,x_max)
 pp = collect(LinRange(0,1,250))
 θθ = collect(1:x_max)
 II = zeros(Float64, length(pp),length(θθ))
-p_opt = Float64[]
-θ_opt = Int[]
+max_N = 100
+p_opt = fill(1.0, max_N)
+θ_opt = fill(10, max_N)
 
 ## Compute mutual information for all N from 1 to 100
-@progress "Computing MI..." for N = 1:100
+@progress "Computing MI..." for N = 1:max_N
     II .= I.(reshape(pp,(:,1)),reshape(θθ,(1,:)),Ref(P_X),N)
     p_idx,θ_idx = argmax(II).I
-    push!(θ_opt, θθ[θ_idx])
-    push!(p_opt, pp[p_idx])
+    θ_opt[N] = θθ[θ_idx]
+    p_opt[N] = pp[p_idx]
 end
 
 ## Plot figure
-
-N = 25
-fig = Figure(resolution=(0.75textwidth,0.25textwidth))
-
+fig = Figure(resolution=(0.75textwidth,0.35textwidth))
+h = nothing
 for (i,N) in enumerate((1,25))
     # plot heatmap
-    ax = fig[1,2i-1] = Axis(fig, titlealign=:left, title="$(N) detectors", xlabel="Transmission probability", ylabel="Threshold")
+    ax = fig[1,i] = Axis(fig, titlealign=:left, title=["A","B"][i]*".    "*(N==1 ? "single detector" : "$(N) detectors"), ylabel="Dendritic threshold", yminorticksvisible=true, xminorticksvisible=true, xminorticks=IntervalsBetween(5), yminorticks=IntervalsBetween(5))
+    Label(fig[1, 1:2, Bottom()], "Synaptic transmission probability", valign = :top, padding = (0, 0, 0, 25))
+
     II .= I.(reshape(pp,(:,1)),reshape(θθ,(1,:)),Ref(P_X),N)
-    h = heatmap!(ax, pp, θθ, II, colormap = :heat)
-    Colorbar(fig[1,2i], h, label = "Mutual Information I(N;X) in bits")
+    h = heatmap!(ax, pp, θθ, II, colormap = :heat, colorrange=(0.0,2.5))
+
+    if i!=1
+        hideydecorations!(ax, ticks=false, minorticks=false)
+    end
 
     # plot 
     lines!(ax, p_opt, θ_opt, color=:black)
-    c = fill(:black,length(p_opt))
-    s = fill(5,length(p_opt))
-    c[N] = :red
-    s[N] = 10
-    scatter!(ax, p_opt, θ_opt, markersize=s, color=c)
-    
-end
-colgap!(fig.layout, 2, 100)
+    hlines!(ax, [θ_opt[N]], linestyle=:dash, linewidth=1, color=:gray)
+    vlines!(ax, [p_opt[N]], linestyle=:dash, linewidth=1, color=:gray)
+    scatter!(ax, [p_opt[N]], [θ_opt[N]], markersize=5, color=:red, strokecolor=:black, strokewidth=1)
 
+end
+Colorbar(fig[1,3], h, label = "I(N;X) in bits")
+
+colgap!(fig.layout, 2, 0.05textwidth)
 display(fig)
 
 ## save result
