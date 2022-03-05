@@ -91,19 +91,19 @@ contourf!(ax2b, probabilities, probabilities, firing_probabilities1, colormap=:v
 
 contourf!(ax3b, probabilities, probabilities, firing_probabilities2, colormap=:viridis, colorrange=(0,1))
 
-p_n=plot!(ax3a, objects2[:C], ports=Dict(:C=>[],:A=>[:A, :dummy],:B=>[:dummy, :B]), angle_between=20/180*π, branch_width=0.2, branch_length=1.0, color=Dict(:C=>RGBAf0(0.5,0.5,0.5,0.5), :A=>color_1, :B=>color_2))
+p_n=plot!(ax3a, objects2[:C], ports=Dict(:C=>[],:A=>[:A, :dummy],:B=>[:dummy, :B]), angle_between=20/180*π, branch_width=0.2, branch_length=1.0, color=Dict(:C=>RGBAf(0.5,0.5,0.5,0.5), :A=>color_1, :B=>color_2))
 ports = Dict(p_n.attributes[:ports][])
 arrows!(ax3a, [ports[:A]-Point2f0(0.6,0),ports[:B]-Point2f0(0.45,0)], [Point2f0(0.55,0),Point2f0(0.4,0)], linewidth=2, arrowsize = [10,10])
 text!.(ax3a, "A~B(10,P₁)", position=ports[:A]-Point2f0(0.6,0), align=(:left, :top), textsize=14, color=:black)
 text!.(ax3a, "B~B(10,P₂)", position=ports[:B]-Point2f0(0.45,0), align=(:left, :bottom), textsize=14, color=:black)
 
-p_n=plot!(ax2a, objects1[:C], ports=Dict(:C=>[],:A=>[:A],:B=>[:B]), angle_between=20/180*π, branch_width=0.2, branch_length=1.0, color=Dict(:C=>RGBAf0(0.5,0.5,0.5,0.5), :A=>color_1, :B=>color_2))
+p_n=plot!(ax2a, objects1[:C], ports=Dict(:C=>[],:A=>[:A],:B=>[:B]), angle_between=20/180*π, branch_width=0.2, branch_length=1.0, color=Dict(:C=>RGBAf(0.5,0.5,0.5,0.5), :A=>color_1, :B=>color_2))
 ports = Dict(p_n.attributes[:ports][])
-arrows!(ax2a, [ports[:A]-Point2f0(0.35,0),ports[:B]-Point2f0(0.35,0)] , Node([Point2f0(0.3,0),Point2f0(0.3,0)]), linewidth=2, arrowsize = [10,10])
+arrows!(ax2a, [ports[:A]-Point2f0(0.35,0),ports[:B]-Point2f0(0.35,0)] , Observable([Point2f0(0.3,0),Point2f0(0.3,0)]), linewidth=2, arrowsize = [10,10])
 text!.(ax2a, "A~B(10,P₁)", position=ports[:A]-Point2f0(0.35,0), align=(:left, :bottom), textsize=14, color=:black)
 text!.(ax2a, "B~B(10,P₂)", position=ports[:B]-Point2f0(0.35,0), align=(:left, :bottom), textsize=14, color=:black)
 
-p_n=plot!(ax1a, objects0[:C], ports=Dict(:C=>[:C],:A=>[:A]), angle_between=20/180*π, branch_width=0.2, branch_length=1.0, color=Dict(:C=>RGBAf0(0.5,0.5,0.5,0.5), :A=>color_1, :B=>color_2))
+p_n=plot!(ax1a, objects0[:C], ports=Dict(:C=>[:C],:A=>[:A]), angle_between=20/180*π, branch_width=0.2, branch_length=1.0, color=Dict(:C=>RGBAf(0.5,0.5,0.5,0.5), :A=>color_1, :B=>color_2))
 ports = Dict(p_n.attributes[:ports][])
 arrows!(ax1a, [ports[:A]-Point2f0(0.35,0)], [Point2f0(0.3,0)], linewidth=2, arrowsize = 10)
 text!.(ax1a, "A~B(10,P₁)", position=ports[:A]-Point2f0(0.35,0), align=(:left, :bottom), textsize=14, color=:black)

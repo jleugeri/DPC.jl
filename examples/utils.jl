@@ -58,17 +58,17 @@ presentation_theme[:fontsize][] = 26
 
 
 color_1 = pal.colors[1]
-color_1_50 = Makie.RGBAf0(color_1.r,color_1.g,color_1.b,0.5)
-color_1_25 = Makie.RGBAf0(color_1.r,color_1.g,color_1.b,0.25)
+color_1_50 = Makie.RGBAf(color_1.r,color_1.g,color_1.b,0.5)
+color_1_25 = Makie.RGBAf(color_1.r,color_1.g,color_1.b,0.25)
 color_2 = pal.colors[2]
-color_2_50 = Makie.RGBAf0(color_2.r,color_2.g,color_2.b,0.5)
-color_2_25 = Makie.RGBAf0(color_2.r,color_2.g,color_2.b,0.25)
+color_2_50 = Makie.RGBAf(color_2.r,color_2.g,color_2.b,0.5)
+color_2_25 = Makie.RGBAf(color_2.r,color_2.g,color_2.b,0.25)
 color_3 = pal.colors[3]
-color_3_50 = Makie.RGBAf0(color_3.r,color_3.g,color_3.b,0.5)
-color_3_25 = Makie.RGBAf0(color_3.r,color_3.g,color_3.b,0.25)
+color_3_50 = Makie.RGBAf(color_3.r,color_3.g,color_3.b,0.5)
+color_3_25 = Makie.RGBAf(color_3.r,color_3.g,color_3.b,0.25)
 color_4 = pal.colors[4]
-color_4_50 = Makie.RGBAf0(color_4.r,color_4.g,color_4.b,0.5)
-color_4_25 = Makie.RGBAf0(color_4.r,color_4.g,color_4.b,0.25)
+color_4_50 = Makie.RGBAf(color_4.r,color_4.g,color_4.b,0.5)
+color_4_25 = Makie.RGBAf(color_4.r,color_4.g,color_4.b,0.25)
 
 """
 Computes diameters for branches to satisfy Rall's condition.

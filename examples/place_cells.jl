@@ -156,8 +156,8 @@ linkyaxes!(ax31, ax33)
 
 # Plot the stochastically sampled paths
 for path in paths[2:end]
-    lines!(ax11, 1000 .*(path.x.-domain[2][1]/2), 1000 .*(path.y.-domain[2][2]/2), linewidth=2, color=RGBAf0(0.2,0.2,0.2,0.5))
-    arrows!(ax11, 1000 .* [Point2f0(path.x[end],path.y[end]).-domain[2]./2], [Point2f0(path.x[end] - path.x[end-1], path.y[end] - path.y[end-1])], linewidth=2, color=RGBAf0(0.2,0.2,0.2,0.5))
+    lines!(ax11, 1000 .*(path.x.-domain[2][1]/2), 1000 .*(path.y.-domain[2][2]/2), linewidth=2, color=RGBAf(0.2,0.2,0.2,0.5))
+    arrows!(ax11, 1000 .* [Point2f0(path.x[end],path.y[end]).-domain[2]./2], [Point2f0(path.x[end] - path.x[end-1], path.y[end] - path.y[end-1])], linewidth=2, color=RGBAf(0.2,0.2,0.2,0.5))
 end
 lines!(ax11, 1000 .*(paths[1].x.-domain[2][1]/2), 1000 .*(paths[1].y.-domain[2][2]/2), linewidth=4, color=color_4)
 arrows!(ax11, 1000 .* [Point2f0(paths[1].x[end],paths[1].y[end]).-domain[2]./2], [Point2f0(paths[1].x[end] - paths[1].x[end-1], paths[1].y[end] - paths[1].y[end-1])], linewidth=4, color=color_4)
@@ -213,7 +213,7 @@ for (α,x₀) in zip(αs, x₀s_rotated)
     push!(pos, path_start .- domain[2]./2)
     push!(dir, path_end .- path_start)
 end
-arrows!(ax22, 1000 .* pos, 1000 .* dir, linewidth=2, color=RGBAf0.(0.2,0.2,0.2,prob_rotated[1]))
+arrows!(ax22, 1000 .* pos, 1000 .* dir, linewidth=2, color=RGBAf.(0.2,0.2,0.2,prob_rotated[1]))
 
 # Plot the orientation-dependent spike probability
 vlines!(ax32, [α_opt].*180/π, linestyle=:dash, color=:gray, linewidth=2)
@@ -232,7 +232,7 @@ for (p,x₀) in zip(prob_offset[1], x₀s_offset)
     push!(pos, path_start .- domain[2]./2)
     push!(dir, path_end .- path_start)
 end
-arrows!(ax23, 1000 .* pos, 1000 .* dir, linewidth=2, color=RGBAf0.(0.2,0.2,0.2,prob_offset[1]))
+arrows!(ax23, 1000 .* pos, 1000 .* dir, linewidth=2, color=RGBAf.(0.2,0.2,0.2,prob_offset[1]))
 
 # Plot the offset-dependent spike probability
 vlines!(ax33, [0], linestyle=:dash, color=:gray, linewidth=2)
