@@ -14,7 +14,7 @@ function Makie.plot!(myplot::Steps)
     t = myplot[1]
     y = myplot[2]
 
-    line = Node(Point2f0[])
+    line = Observable(Point2f0[])
     function update!(t, y)
         empty!(line[])
         y_old = y[1]
@@ -41,8 +41,8 @@ end
 
 function Makie.plot!(plt::StateTrace)
     t,state,color,offset,height=plt[:t],plt[:state],plt[:color],plt.offset,plt.height
-    rects = Node(Rect2D{Float64}[])
-    colors = Node(Any[])
+    rects = Observable(Rect2D{Float64}[])
+    colors = Observable(Any[])
     
     Makie.Observables.onany(t, state, color, offset, height) do t,state,color, offset, height
         t₀,s₀ = first(t),first(state)
@@ -89,7 +89,7 @@ function Makie.plot!(treeplot::Makie.Plot(Neuron))
     offset = treeplot[:root_position]
     
     # if obj is an observable dict-type holding named values, get named value ...
-    maybe_get(obj::Node, key) = if isa(obj[],Union{DefaultDict,Dict})
+    maybe_get(obj::Observable, key) = if isa(obj[],Union{DefaultDict,Dict})
         @lift $obj[key]
     else
         obj
