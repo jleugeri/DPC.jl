@@ -83,16 +83,16 @@ function implicit_function_contour(f, x_range, y_range; iterations=5, constraint
                 if first(chain2)==last(chain2)
                     delete_q[j] = true
                 elseif first(queue[i]) == first(chain2)
-                    queue[i]=[reverse(chain2);queue[i]]
+                    queue[i]=[reverse(chain2)[1:end-1];queue[i]]
                     delete_q[j] = true
                 elseif first(queue[i]) == last(chain2)
-                    queue[i]=[chain2;queue[i]]
+                    queue[i]=[chain2[1:end-1];queue[i]]
                     delete_q[j] = true
                 elseif last(queue[i]) == first(chain2)
-                    queue[i]=[queue[i];chain2]
+                    queue[i]=[queue[i][1:end-1];chain2]
                     delete_q[j] = true
                 elseif last(queue[i]) == last(chain2)
-                    queue[i]=[queue[i];reverse(chain2)]
+                    queue[i]=[queue[i][1:end-1];reverse(chain2)]
                     delete_q[j] = true
                 end
             end
@@ -108,6 +108,16 @@ function implicit_function_contour(f, x_range, y_range; iterations=5, constraint
         qx,qy=MDBM.getinterpolatedsolution(prob.ncubes[q],prob)
         push!(x, qx..., NaN)
         push!(y, qy..., NaN)
+    end
+
+    if !isempty(x) && (isnan(first(x)) || isnan(first(y)))
+        popfirst!(x)
+        popfirst!(y)
+    end
+
+    if !isempty(x) && (isnan(last(x)) || isnan(last(y)))
+        pop!(x)
+        pop!(y)
     end
 
     return (;x,y)
@@ -294,22 +304,33 @@ function triangulate((d₁,d₂,d₃),(x₁,y₁),(x₂,y₂),(x₃,y₃); check
 end
 
 
-function get_geodesic(P₁,P₂,G;num_points=50)
+function get_geodesic(P₁,P₂,G;num_points=500)
     P₁,P₂ = normalize_with_gramian.((P₁,P₂);G)
     u = normalize_with_gramian(cross(P₁, P₂);G)
-    max_angle = acos(P₁'*P₂)#acos(P₁'*G*P₂)
+    max_angle = acos(P₁'*G*P₂)
     R1 = [0.0 -u[3] u[2]; u[3] 0.0 -u[1]; -u[2] u[1] 0.0]
     R2 = u*u'
 
     [normalize_with_gramian(cos(θ)*P₁+sin(θ)*R1*P₁+(1.0-cos(θ))*R2*P₁;G) for θ in LinRange(0.0,max_angle,num_points)]
+    # #rotation axis:      u = P₁×P₂
+    # #rotation direction: d = x×u = x×(P₁×P₂) = P₁*(x'*G*P₂)-P₂*(x'*G*P₁)
+    # x = P₁
+    # res = Vector{Vector{Float64}}(undef, num_points)
+    # for i in 1:num_points
+    #     x -= 0.01 * P₁*(x'*G*P₂)-P₂*(x'*G*P₁)
+    #     x = normalize_with_gramian(x;G)
+    #     res[i] = x
+    # end
+    # return res
 end
 
 
-function trimetric_constraint((x₁,x₂,x₃),Q₁,Q₂,Q₃)
+function trimetric_constraint((v₁,v₂,v₃),Q₁,Q₂,Q₃,G)
+    D = acos.(G*[v₁,v₂,v₃])
     conditions = zeros(Float64,3)     
     for i in 0:2
         P₁,P₂,P₃ = circshift([Q₁,Q₂,Q₃],i)
-        d₁,d₂,d₃ = circshift([x₁,x₂,x₃],i)
+        d₁,d₂,d₃ = circshift(D,i)
     
         old_D₁₂ = norm(P₁-P₂)
         old_D₁₃ = norm(P₁-P₃)
@@ -324,6 +345,10 @@ function trimetric_constraint((x₁,x₂,x₃),Q₁,Q₂,Q₃)
     return maximum(conditions)
 end
 
+
+function cone_constraint(v)
+    return minimum(v)
+end
 
 
 function get_trimetric_contour(i, c, x_range, y_range, G, (X_trans, Y_trans, Z_trans); cut_to_sector=true, cut_to_triangle=false, args...)
@@ -372,14 +397,12 @@ function get_trimetric_contour(i, c, x_range, y_range, G, (X_trans, Y_trans, Z_t
         compute_v₁(v₂,v₃) = (1.0 - v₂^2 - 2v₂*v₃*G₂₃ -v₃^2)/(c+v₂*G₁₂+v₃*G₁₃)
         function constraint(v₂,v₃)
             v = [compute_v₁(v₂,v₃),v₂,v₃][P]
-            Gv = G*v
-            return if !all(-1.0 .≤ (Gv) .≤ 1.0)
+            return if !all(-1.0 .≤ (G*v) .≤ 1.0)
                 -1
             elseif cut_to_sector
-                minimum(v)
+                cone_constraint(v)
             else
-                D = acos.(Gv)
-                trimetric_constraint(D,X_trans,Y_trans,Z_trans)
+                trimetric_constraint(v,X_trans,Y_trans,Z_trans,G)
             end
         end
         v₂,v₃ = implicit_function_contour(f,x_range,y_range; constraint, args...)
@@ -425,6 +448,17 @@ function get_trimetric_contour(i, c, x_range, y_range, G, (X_trans, Y_trans, Z_t
     end
 
     (x, y) = eachcol([collect.(res)'...;])
+
+
+    if !isempty(x) && ( isnan(first(x)) || isnan(first(y)) )
+        x=x[2:end]
+        y=y[2:end]
+    end
+
+    if !isempty(x) && ( isnan(last(x)) || isnan(last(y)) )
+        x=x[1:end-1]
+        y=y[1:end-1]
+    end
 
     return (;x,y)
 end

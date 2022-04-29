@@ -6,7 +6,7 @@ include("utils.jl")
 N = 1000            # dimensionality of the input space
 ρ = 0.2             # sparsity
 #p_back = 0.01       # background firing probability (noise!)
-θ = 180             # firing threshold of the segments
+θ = 140             # firing threshold of the segments
 num_locations = 20  # number of latitudes & longitudes on the test-point grid 
 num_samples = 1000  # number of samples to draw per location
 
@@ -14,8 +14,8 @@ num_samples = 1000  # number of samples to draw per location
 A_dir,B_dir,C_dir = [0.1, 0.2, 0.5],[0.2, 0.5, 0.2],[1.0, 0.3, 0.3]
 
 θ_α = θ_β = θ_γ = θ
-latitudes = LinRange(0, pi/2, num_locations)     # only upper hemisphere
-longitudes = LinRange(0, pi/2, num_locations)    # only first sector
+latitudes = LinRange(0.01, pi/2-0.01, num_locations)     # only upper hemisphere
+longitudes = LinRange(0.01, pi/2-0.01, num_locations)    # only first sector
 
 ## generate basis vectors and gramian
 
@@ -158,86 +158,96 @@ ylims!(ax_left, min(X_trans[2],Y_trans[2],Z_trans[2])-0.5,max(X_trans[2],Y_trans
 hidedecorations!(ax_left)
 hidespines!(ax_left)
 
-cut_to_sector = true
+cut_to_sector = false
 cut_to_triangle = !cut_to_sector
 # draw coordinate grid
+ticklabels = [String[] for i in 1:3]
+ticklocations = [Point2[] for i in 1:3]
+tickrotations = [Float64[] for i in 1:3]
+tickalignments = [Tuple{Symbol,Symbol}[] for i in 1:3]
+tickcolors = [RGBAf0[] for i in 1:3]
+corner_colors = [RGBAf0(0.1 + 0.3*(j-1),0.1 + 0.3*(j-1),0.1 + 0.3*(j-1),1.0) for j in 1:3]
 for (i,r1) ∈ enumerate(reverse(cos.(0:0.1:acos(maximum(gramian_n[[2,3,6]])))))
-    #    v₁ = (1.0 - v₂*v₂*G₂₂ - v₂*v₃*G₂₃ - v₃*v₂*G₃₂-v₃v₃G₃₃)/(c+v₂G₂₁+v₃G₃₁)
     for j in 1:3
-        println(r1," ",j)
-        x,y = get_trimetric_contour(j, r1, -0.05:0.25:1.5,-0.05:0.25:1.5, gramian_n, (X_trans, Y_trans, Z_trans); iterations=4, cut_to_sector, cut_to_triangle)
-        lines!(ax_left, x, y, color=:silver, linewidth=1)
-    end
+        col = corner_colors[j]
 
-    #  # compute actual dot-product
-    #  (tick,_,dp) = project_2D([r1,0,rest],X_trans,Y_trans,Z_trans)
-    #      # draw r1 on the left
-    #  dx = tick-project_2D([r1,√(0.01)*rest,√(1-0.01)*rest],X_trans,Y_trans,Z_trans).pt
-    #  if dx[1]≈0.0
-    #      angle = -π/8
-    #      dx = Point2(-1.0,0.5)
-    #  else
-    #      angle = atan(dx[2]/dx[1])
-    #      dx /= sqrt(dx[1]^2+dx[2]^2)
-    #  end
-    #  annotations!(ax, [@sprintf("%.2f",dp[1])],[tick+0.02*dx], align=(:right, :center), rotation=angle)
+        x,y = get_trimetric_contour(j, r1, 0.0:0.25:1.5,0:0.25:1.5, gramian_n, (X_trans, Y_trans, Z_trans); iterations=4, cut_to_sector, cut_to_triangle)
+        lines!(ax_left, x, y, color=col, linewidth=1)
+
+        if iseven(i) && !isempty(x) && 1 < i
+            tick = Point2(x[1],y[1])
+            (angle,dx)=if length(x) < 2
+                angle = -π/8
+                dx = Point2(-1.0,0.5)
+                angle,dx
+            else
+                dx = tick-Point2(x[2],y[2])
+                angle = atan(dx[2]/dx[1])
+                dx /= sqrt(dx[1]^2+dx[2]^2)
+                angle,dx
+            end
+            
+            push!(ticklabels[j],@sprintf("%.2f",r1)) 
+            push!(ticklocations[j],tick+0.05*dx)
+            push!(tickrotations[j],angle)
+            push!(tickalignments[j], dx[1] > 0 ? (:left, :center) : (:right, :center))
+            push!(tickcolors[j],col)
+        end
+    end
 end
 
+for (labels,locations,rotations,alignment,colors) in zip(ticklabels,ticklocations,tickrotations, tickalignments, tickcolors)
+    annotations!(ax_left, labels,locations, align=alignment, rotation=rotations, color=colors)
+end
+
+# draw frame
 if cut_to_sector
     r1=project_2D.(get_geodesic([1,0,0],[0,1,0],gramian_n)[2:end-1])
     r2=project_2D.(get_geodesic([0,1,0],[0,0,1],gramian_n)[2:end-1])
     r3=project_2D.(get_geodesic([0,0,1],[1,0,0],gramian_n)[2:end-1])
     lines!(ax_left, Point2[[X_trans];r1;[Y_trans];r2;[Z_trans];r3;[X_trans]], color=:black, linewidth=3)
 else
+    lines!(ax_left, Point2[[X_trans];[Y_trans];[Z_trans];[X_trans]], color=:black, linewidth=3)
 end
 
-# # draw frame
-# for j in 1:3
-#     x,y = get_isometric_contour(j,maximum(gramian_n[j,1:3 .!=j]),0.0:0.5:1.5,-0.25:0.5:1.25; iterations=6)
-#     lines!(ax_left, x, y, color=:black, linewidth=2)
-# end
-
 # draw the corner points
-scatter!(ax_left, [X_trans,Y_trans,Z_trans], color=[:black, :silver, :silver])
+scatter!(ax_left, [X_trans,Y_trans,Z_trans], color=corner_colors)
+annotations!(ax_left, ["P₁","P₂","P₃"], [X_trans,Y_trans,Z_trans], color=corner_colors, align=[(:right,:top),(:left,:top),(:center,:bottom)], offset=[(-10,-10),(10,-10),(0,10)], textsize=25)
 
 # draw the points of interest
 scatter!(ax_left, [A_trans,B_trans,C_trans], color=[:red,:green,:blue], markersize=20)
-fig
-##
-annotations!([@sprintf("%s(%.2f,%.2f,%.2f)",name,p.dp...) for (name,p) in zip(("A","B","C"),(A_trans,B_trans,C_trans))], [A_trans.pt,B_trans.pt,C_trans.pt], align=[(:center,:bottom), (:center,:top), (:center,:top)], offset=[Point2(-40.0,10.0),Point2(0.0,-10.0),Point2(0.0,-10.0)])
+annotations!(ax_left, ["A","B","C"], Point2.([A_trans,B_trans,C_trans]), align=[(:center,:bottom), (:center,:top), (:center,:top)], offset=Point2.([(-10.0,10.0),(0.0,-10.0),(0.0,-10.0)]),textsize=25)
 
-arrows!(ax, [A_trans.pt,B_trans.pt] +  0.05.* [B_trans.pt-A_trans.pt, C_trans.pt-B_trans.pt], 0.875 .* [B_trans.pt-A_trans.pt, C_trans.pt-B_trans.pt], linewidth=3)
+arrows!(ax_left, Point2.([A_trans .+ 0.1.*(B_trans.-A_trans),B_trans .+ 0.1.*(C_trans.-B_trans)]), Point2.([0.8 .* (B_trans.-A_trans), 0.8 .* (C_trans.-B_trans)]), linewidth=3)
 
 colsize!(fig.layout, 1, Relative(0.7))
 fig
+
+##
+
+vertices = [(collect(project_2D(normalize_with_gramian([xv, yv, zv])))' for (xv, yv, zv) in zip(grid_x, grid_y, grid_z))...;]
+faces = [((i-1)*num_locations + j.+(k==1 ? [0 num_locations 1] : [num_locations num_locations+1 1]) for i in  1:num_locations-1 for j in 1:num_locations-1 for k in 1:2)...;]
+
+##
+
 
 for (case,(w,pt)) in enumerate(zip(eachcol(p_transmit),(A_trans,B_trans,C_trans)))
     ax_i = fig[case,2] = Axis(fig, aspect=DataAspect())
     hidedecorations!(ax_i)
     hidespines!(ax_i)
-    transmitted_spikes = dropdims(sum(rand.(Bernoulli.(w .* samples)), dims=1),dims=1)
-    plateau = transmitted_spikes .> θ
-    plateau_prob = dropdims(mean(plateau,dims=3),dims=3)
-
-    #heatmap!(ax_i, plateau_prob)
-    mesh!(ax_i, vertices, faces, color=plateau_prob, colorrange =(0,1))
-    scatter!(ax_i, [pt.pt], color=:red)
+    mesh!(ax_i, vertices, faces, color=vec(plateau_probability_grid[case,:,:]), colorrange =(0,1))
+    scatter!(ax_i, [pt], color=:red)
 end
 
 Colorbar(fig[4, 2], limits = (0, 1), colormap = :viridis, vertical = false)
+
+save("concept_space.svg", fig)
 
 fig
 ##
 
 
+# fn(x)=all(x.> 0)
+# fn(x)=all((gramian_n*x).>0)
 
-
-
-vertices = vec([transform([xv, yv, zv].*scales , X_trans, Y_trans, Z_trans).pt for (xv, yv, zv) in zip(x2, y2, z2)])
-faces = [((i-1)*num_locations + j.+(k==1 ? [0 num_locations 1] : [num_locations num_locations+1 1]) for i in  1:num_locations-1 for j in 1:num_locations-1 for k in 1:2)...;]
-
-
-fn(x)=all(x.> 0)
-fn(x)=all((gramian_n*x).>0)
-
-scatter(Point3.(p), color = ifelse.(isnan.(first.(p_p)), ifelse.(fn.(p),:orange,:red) , ifelse.(fn.(p),:green,:blue)), markersize=20)
+# scatter(Point3.(p), color = ifelse.(isnan.(first.(p_p)), ifelse.(fn.(p),:orange,:red) , ifelse.(fn.(p),:green,:blue)), markersize=20)
