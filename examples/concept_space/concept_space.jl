@@ -1,5 +1,6 @@
-using LinearAlgebra, Printf, SparseArrays, Random, Distributions, CairoMakie
+using DPC,LinearAlgebra, Printf, SparseArrays, Random, Distributions, CairoMakie
 include("utils.jl")
+include("../utils.jl")
 
 ## Define experimental parameters ##############################################
 
@@ -16,6 +17,20 @@ A_dir,B_dir,C_dir = [0.1, 0.2, 0.5],[0.2, 0.5, 0.2],[1.0, 0.3, 0.3]
 θ_α = θ_β = θ_γ = θ
 latitudes = LinRange(0.01, pi/2-0.01, num_locations)     # only upper hemisphere
 longitudes = LinRange(0.01, pi/2-0.01, num_locations)    # only first sector
+
+
+
+config = """
+neurons:
+  - id: neuron
+    branches:
+      - id: S1
+        branches:
+          - id: S2
+            branches:
+            - id: S3
+"""
+(net,objects) = load_network(YAML_source=config)
 
 ## generate basis vectors and gramian
 
@@ -153,13 +168,14 @@ fig = Figure()
 # draw overview axis
 ax_left = fig[1:3,1] = Axis(fig, aspect = DataAspect())
 
-xlims!(ax_left, min(X_trans[1],Y_trans[1],Z_trans[1])-0.5,max(X_trans[1],Y_trans[1],Z_trans[1])+0.5,)
-ylims!(ax_left, min(X_trans[2],Y_trans[2],Z_trans[2])-0.5,max(X_trans[2],Y_trans[2],Z_trans[2])+0.5,)
+_xlims = min(X_trans[1],Y_trans[1],Z_trans[1])-0.5,max(X_trans[1],Y_trans[1],Z_trans[1])+0.5
+_ylims = min(X_trans[2],Y_trans[2],Z_trans[2])-0.5,max(X_trans[2],Y_trans[2],Z_trans[2])+0.5
+xlims!(ax_left, _xlims...)
+ylims!(ax_left, _ylims...)
 hidedecorations!(ax_left)
 hidespines!(ax_left)
 
-cut_to_sector = false
-cut_to_triangle = !cut_to_sector
+cut_to_sector = true
 # draw coordinate grid
 ticklabels = [String[] for i in 1:3]
 ticklocations = [Point2[] for i in 1:3]
@@ -171,21 +187,14 @@ for (i,r1) ∈ enumerate(reverse(cos.(0:0.1:acos(maximum(gramian_n[[2,3,6]])))))
     for j in 1:3
         col = corner_colors[j]
 
-        x,y = get_trimetric_contour(j, r1, 0.0:0.25:1.5,0:0.25:1.5, gramian_n, (X_trans, Y_trans, Z_trans); iterations=4, cut_to_sector, cut_to_triangle)
+        x,y = get_trimetric_contour(j, r1, -0.25:0.25:1.5,-0.25:0.25:1.5, gramian_n, (X_trans, Y_trans, Z_trans); iterations=4, cut_to_sector)
         lines!(ax_left, x, y, color=col, linewidth=1)
 
-        if iseven(i) && !isempty(x) && 1 < i
+        if iseven(i) && length(x) > 1
             tick = Point2(x[1],y[1])
-            (angle,dx)=if length(x) < 2
-                angle = -π/8
-                dx = Point2(-1.0,0.5)
-                angle,dx
-            else
-                dx = tick-Point2(x[2],y[2])
-                angle = atan(dx[2]/dx[1])
-                dx /= sqrt(dx[1]^2+dx[2]^2)
-                angle,dx
-            end
+            dx = tick-Point2(x[2],y[2])
+            angle = atan(dx[2]/dx[1])
+            dx /= sqrt(dx[1]^2+dx[2]^2)
             
             push!(ticklabels[j],@sprintf("%.2f",r1)) 
             push!(ticklocations[j],tick+0.05*dx)
@@ -220,7 +229,7 @@ annotations!(ax_left, ["A","B","C"], Point2.([A_trans,B_trans,C_trans]), align=[
 
 arrows!(ax_left, Point2.([A_trans .+ 0.1.*(B_trans.-A_trans),B_trans .+ 0.1.*(C_trans.-B_trans)]), Point2.([0.8 .* (B_trans.-A_trans), 0.8 .* (C_trans.-B_trans)]), linewidth=3)
 
-colsize!(fig.layout, 1, Relative(0.7))
+colsize!(fig.layout, 1, Relative(0.5))
 fig
 
 ##
@@ -235,11 +244,34 @@ for (case,(w,pt)) in enumerate(zip(eachcol(p_transmit),(A_trans,B_trans,C_trans)
     ax_i = fig[case,2] = Axis(fig, aspect=DataAspect())
     hidedecorations!(ax_i)
     hidespines!(ax_i)
+    xlims!(ax_i, _xlims...)
+    ylims!(ax_i, _ylims...)
     mesh!(ax_i, vertices, faces, color=vec(plateau_probability_grid[case,:,:]), colorrange =(0,1))
     scatter!(ax_i, [pt], color=:red)
+    annotations!(ax_i, ["A","B","C"][[case]], Point2.([A_trans,B_trans,C_trans])[[case]], align=[(:center,:bottom), (:center,:top), (:center,:top)][[case]], offset=Point2.([(-10.0,10.0),(0.0,-10.0),(0.0,-10.0)])[[case]],textsize=18)
+
+    # draw frame
+    r1=project_2D.(get_geodesic([1,0,0],[0,1,0],gramian_n)[2:end-1])
+    r2=project_2D.(get_geodesic([0,1,0],[0,0,1],gramian_n)[2:end-1])
+    r3=project_2D.(get_geodesic([0,0,1],[1,0,0],gramian_n)[2:end-1])
+    lines!(ax_i, Point2[[X_trans];r1;[Y_trans];r2;[Z_trans];r3;[X_trans]], color=:black, linewidth=3)
+
+    # label corners
+    annotations!(ax_i, ["P₁","P₂","P₃"], [X_trans,Y_trans,Z_trans], color=corner_colors, align=[(:right,:top),(:left,:top),(:center,:bottom)], offset=[(-5,-5),(5,-5),(0,5)], textsize=18)
+
 end
 
 Colorbar(fig[4, 2], limits = (0, 1), colormap = :viridis, vertical = false)
+
+ax_n = fig[1:3,3] = Axis(fig)
+
+
+
+plot!(ax_n, objects[:neuron],
+    branch_width=1, 
+    branch_length=8.0, 
+    color=Dict(:n=>color_3, :seg1=>color_1, :seg2=>color_2)
+)
 
 save("concept_space.svg", fig)
 

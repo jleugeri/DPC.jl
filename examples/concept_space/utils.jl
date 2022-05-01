@@ -351,7 +351,7 @@ function cone_constraint(v)
 end
 
 
-function get_trimetric_contour(i, c, x_range, y_range, G, (X_trans, Y_trans, Z_trans); cut_to_sector=true, cut_to_triangle=false, args...)
+function get_trimetric_contour(i, c, x_range, y_range, G, (X_trans, Y_trans, Z_trans); cut_to_sector=true, args...)
     #=
     V = v₁*X + v₂*Y + v₃*Z
     v = [v₁,v₂,v₃]
@@ -387,30 +387,35 @@ function get_trimetric_contour(i, c, x_range, y_range, G, (X_trans, Y_trans, Z_t
     Use distances to triangulate position of contour    
     =#
 
-    P = circshift([1,2,3],i-1)
-
-    v₁,v₂,v₃ = if c^2 ≈ 1.0
-        ([1.0-eps(Float64)],[0.0],[0.0])
+    v_shifted = if c^2 ≈ 1.0
+        [[1.0-eps(Float64)],[0.0],[0.0]]
     else
-        G₁₂,G₁₃,G₂₃ = G[P[1],P[2]],G[P[1],P[3]],G[P[2],P[3]]
+        G_shifted = circshift(G,(1-i,1-i))
+        G₁₂,G₁₃,G₂₃ = G_shifted[1,2],G_shifted[1,3],G_shifted[2,3]
+
         f(v₂,v₃) = v₂^2 * (G₁₂^2 - 1.0) + 2.0 * v₂*v₃*(G₁₂*G₁₃-G₂₃) + v₃^2 * (G₁₃^2 - 1.0) + 1.0-c^2
+
         compute_v₁(v₂,v₃) = (1.0 - v₂^2 - 2v₂*v₃*G₂₃ -v₃^2)/(c+v₂*G₁₂+v₃*G₁₃)
+
         function constraint(v₂,v₃)
-            v = [compute_v₁(v₂,v₃),v₂,v₃][P]
-            return if !all(-1.0 .≤ (G*v) .≤ 1.0)
+            v_shifted = [compute_v₁(v₂,v₃),v₂,v₃]
+            v_unshifted=circshift(v_shifted,i-1)
+            return if !all(-1.0 .≤ (G*v_unshifted) .≤ 1.0)
                 -1
             elseif cut_to_sector
-                cone_constraint(v)
+                cone_constraint(v_unshifted)
             else
-                trimetric_constraint(v,X_trans,Y_trans,Z_trans,G)
+                trimetric_constraint(v_unshifted,X_trans,Y_trans,Z_trans,G)
             end
         end
         v₂,v₃ = implicit_function_contour(f,x_range,y_range; constraint, args...)
 
         valid = constraint.(v₂,v₃) .≥ 0
         v₂,v₃=v₂[valid],v₃[valid]
-        tuple([compute_v₁.(v₂,v₃),v₂,v₃][P]...)
+        [compute_v₁.(v₂,v₃),v₂,v₃]
     end
+
+    v₁,v₂,v₃ = circshift(v_shifted,i-1)
 
     if isempty(v₁)
         return (x=Float64[],y=Float64[])
@@ -419,7 +424,7 @@ function get_trimetric_contour(i, c, x_range, y_range, G, (X_trans, Y_trans, Z_t
     D = collect(eachcol(acos.(G*[v₁';v₂';v₃'])))
     res = triangulate.(D,Ref(X_trans),Ref(Y_trans),Ref(Z_trans))
     
-    if cut_to_triangle
+    if !cut_to_sector
         distance_to_edge(x,p1,p2) = (x[1] - p2[1]) * (p1[2] - p2[2]) - (p1[1] - p2[1]) * (x[2] - p2[2])
 
         delete_res = zeros(Bool,length(res))

@@ -71,7 +71,7 @@ Port{W}(name::I) where {W,I} = Port{W,I}(name)
 
 function Makie.default_theme(scene::Makie.SceneLike, ::Type{<: Makie.Plot(Neuron)})
     Theme(
-        color=RGBAf(0.9,0.9,0.9,1.0),
+        color=RGBAf0(0.9,0.9,0.9,1.0),
         branch_width=0.1,
         branch_length=1.0,
         angle_between=10/180*pi,
