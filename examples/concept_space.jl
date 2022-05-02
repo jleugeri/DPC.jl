@@ -1,18 +1,20 @@
 using DPC,LinearAlgebra, Printf, SparseArrays, Random, Distributions, CairoMakie
 include("utils.jl")
-include("../utils.jl")
+include(joinpath(@__DIR__, "concept_space", "utils.jl"))
+
 
 ## Define experimental parameters ##############################################
 
 N = 1000            # dimensionality of the input space
 ρ = 0.2             # sparsity
 #p_back = 0.01       # background firing probability (noise!)
-θ = 140             # firing threshold of the segments
+θ = 150             # firing threshold of the segments
 num_locations = 20  # number of latitudes & longitudes on the test-point grid 
 num_samples = 1000  # number of samples to draw per location
 
 # arbitrarily choosen directions of interest
-A_dir,B_dir,C_dir = [0.1, 0.2, 0.5],[0.2, 0.5, 0.2],[1.0, 0.3, 0.3]
+#A_dir,B_dir,C_dir = [0.1, 0.2, 0.5],[0.2, 0.5, 0.2],[1.0, 0.3, 0.3]
+A_dir,B_dir,C_dir = [0.1, 0.5, 0.5],[0.5, 0.5, 0.2],[0.5, 0.1, 0.7]
 
 θ_α = θ_β = θ_γ = θ
 latitudes = LinRange(0.01, pi/2-0.01, num_locations)     # only upper hemisphere
@@ -22,13 +24,11 @@ longitudes = LinRange(0.01, pi/2-0.01, num_locations)    # only first sector
 
 config = """
 neurons:
-  - id: neuron
+  - id: S3
     branches:
-      - id: S1
+      - id: S2
         branches:
-          - id: S2
-            branches:
-            - id: S3
+          - id: S1
 """
 (net,objects) = load_network(YAML_source=config)
 
@@ -166,7 +166,14 @@ A_trans,B_trans,C_trans = project_2D.((A,B,C))
 fig = Figure()
 
 # draw overview axis
-ax_left = fig[1:3,1] = Axis(fig, aspect = DataAspect())
+ax_left = fig[1:3,1] = Axis(fig, aspect = DataAspect(), backgroundcolor = :transparent)
+
+# fake axis background
+r1=project_2D.(get_geodesic([1,0,0],[0,1,0],gramian_n)[2:end-1])
+r2=project_2D.(get_geodesic([0,1,0],[0,0,1],gramian_n)[2:end-1])
+r3=project_2D.(get_geodesic([0,0,1],[1,0,0],gramian_n)[2:end-1])
+boundary = [r1;r2;r3]
+poly!(ax_left, boundary, color=:gray90)
 
 _xlims = min(X_trans[1],Y_trans[1],Z_trans[1])-0.5,max(X_trans[1],Y_trans[1],Z_trans[1])+0.5
 _ylims = min(X_trans[2],Y_trans[2],Z_trans[2])-0.5,max(X_trans[2],Y_trans[2],Z_trans[2])+0.5
@@ -211,9 +218,6 @@ end
 
 # draw frame
 if cut_to_sector
-    r1=project_2D.(get_geodesic([1,0,0],[0,1,0],gramian_n)[2:end-1])
-    r2=project_2D.(get_geodesic([0,1,0],[0,0,1],gramian_n)[2:end-1])
-    r3=project_2D.(get_geodesic([0,0,1],[1,0,0],gramian_n)[2:end-1])
     lines!(ax_left, Point2[[X_trans];r1;[Y_trans];r2;[Z_trans];r3;[X_trans]], color=:black, linewidth=3)
 else
     lines!(ax_left, Point2[[X_trans];[Y_trans];[Z_trans];[X_trans]], color=:black, linewidth=3)
@@ -224,12 +228,12 @@ scatter!(ax_left, [X_trans,Y_trans,Z_trans], color=corner_colors)
 annotations!(ax_left, ["P₁","P₂","P₃"], [X_trans,Y_trans,Z_trans], color=corner_colors, align=[(:right,:top),(:left,:top),(:center,:bottom)], offset=[(-10,-10),(10,-10),(0,10)], textsize=25)
 
 # draw the points of interest
-scatter!(ax_left, [A_trans,B_trans,C_trans], color=[:red,:green,:blue], markersize=20)
-annotations!(ax_left, ["A","B","C"], Point2.([A_trans,B_trans,C_trans]), align=[(:center,:bottom), (:center,:top), (:center,:top)], offset=Point2.([(-10.0,10.0),(0.0,-10.0),(0.0,-10.0)]),textsize=25)
+scatter!(ax_left, [A_trans,B_trans,C_trans], color=[color_1,color_2,color_3], markersize=20)
+annotations!(ax_left, ["A","B","C"], Point2.([A_trans,B_trans,C_trans]), align=[(:center,:bottom), (:center,:top), (:right,:top)], offset=Point2.([(-10.0,10.0),(0.0,-10.0),(0.0,-10.0)]),textsize=25, color=[color_1,color_2,color_3])
 
-arrows!(ax_left, Point2.([A_trans .+ 0.1.*(B_trans.-A_trans),B_trans .+ 0.1.*(C_trans.-B_trans)]), Point2.([0.8 .* (B_trans.-A_trans), 0.8 .* (C_trans.-B_trans)]), linewidth=3)
+arrows!(ax_left, Point2.([A_trans .+ 0.2.*(B_trans.-A_trans),B_trans .+ 0.2.*(C_trans.-B_trans)]), Point2.([0.6 .* (B_trans.-A_trans), 0.6 .* (C_trans.-B_trans)]), linewidth=3)
 
-colsize!(fig.layout, 1, Relative(0.5))
+
 fig
 
 ##
@@ -241,14 +245,15 @@ faces = [((i-1)*num_locations + j.+(k==1 ? [0 num_locations 1] : [num_locations 
 
 
 for (case,(w,pt)) in enumerate(zip(eachcol(p_transmit),(A_trans,B_trans,C_trans)))
-    ax_i = fig[case,2] = Axis(fig, aspect=DataAspect())
+    ax_i = fig[case,2] = Axis(fig, aspect=DataAspect(), backgroundcolor = :transparent)
     hidedecorations!(ax_i)
     hidespines!(ax_i)
     xlims!(ax_i, _xlims...)
     ylims!(ax_i, _ylims...)
     mesh!(ax_i, vertices, faces, color=vec(plateau_probability_grid[case,:,:]), colorrange =(0,1))
-    scatter!(ax_i, [pt], color=:red)
-    annotations!(ax_i, ["A","B","C"][[case]], Point2.([A_trans,B_trans,C_trans])[[case]], align=[(:center,:bottom), (:center,:top), (:center,:top)][[case]], offset=Point2.([(-10.0,10.0),(0.0,-10.0),(0.0,-10.0)])[[case]],textsize=18)
+
+    scatter!(ax_i, [pt], color=[color_1,color_2,color_3][[case]])
+    annotations!(ax_i, ["A","B","C"][[case]], Point2.([A_trans,B_trans,C_trans])[[case]], align=[(:center,:bottom), (:center,:bottom), (:right,:top)][[case]], offset=Point2.([(-5.0,5.0),(0.0,5.0),(0.0,-5.0)])[[case]],textsize=18, color=[color_1,color_2,color_3][[case]])
 
     # draw frame
     r1=project_2D.(get_geodesic([1,0,0],[0,1,0],gramian_n)[2:end-1])
@@ -261,20 +266,29 @@ for (case,(w,pt)) in enumerate(zip(eachcol(p_transmit),(A_trans,B_trans,C_trans)
 
 end
 
-Colorbar(fig[4, 2], limits = (0, 1), colormap = :viridis, vertical = false)
+Colorbar(fig[4, 2], limits = (0, 1), colormap = :viridis, vertical = false, flipaxis=false, tellwidth=false, width=100)
 
-ax_n = fig[1:3,3] = Axis(fig)
+ax_n = fig[1:3,3] = Axis(fig,aspect=DataAspect())
 
+hidedecorations!(ax_n)
+ax_n.backgroundcolor = :transparent
 
-
-plot!(ax_n, objects[:neuron],
+plot!(ax_n, objects[:S3],
     branch_width=1, 
     branch_length=8.0, 
-    color=Dict(:n=>color_3, :seg1=>color_1, :seg2=>color_2)
+    color=Dict(:S3=>color_3, :S2=>color_2, :S1=>color_1)
 )
 
 save("concept_space.svg", fig)
 
+colsize!(fig.layout, 1, Relative(0.6))
+colsize!(fig.layout, 3, Relative(0.1))
+
+colgap!(fig.layout, 1, 0)
+colgap!(fig.layout, 2, 0)
+rowgap!(fig.layout, 1, 0)
+rowgap!(fig.layout, 2, 0)
+rowgap!(fig.layout, 3, 0)
 fig
 ##
 

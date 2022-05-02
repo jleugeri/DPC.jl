@@ -408,12 +408,33 @@ function get_trimetric_contour(i, c, x_range, y_range, G, (X_trans, Y_trans, Z_t
                 trimetric_constraint(v_unshifted,X_trans,Y_trans,Z_trans,G)
             end
         end
+        
         v₂,v₃ = implicit_function_contour(f,x_range,y_range; constraint, args...)
 
         valid = constraint.(v₂,v₃) .≥ 0
-        v₂,v₃=v₂[valid],v₃[valid]
-        [compute_v₁.(v₂,v₃),v₂,v₃]
-    end
+        v₁  = ifelse.(valid,compute_v₁.(v₂,v₃),NaN)
+        v₂ .= ifelse.(valid,v₂,NaN)
+        v₃ .= ifelse.(valid,v₃,NaN)
+        
+        keep = Int[]
+        idx=1
+        while idx<length(valid)
+            start_idx=findnext(valid,idx)
+            if isnothing(start_idx)
+                break
+            end
+
+            end_idx=findnext(valid .== false, start_idx)
+            if isnothing(end_idx)
+                end_idx = length(valid)
+            end
+            # keep only at most one NaN
+            append!(keep,start_idx:end_idx)
+            idx=end_idx
+        end
+
+        [v₁[keep],v₂[keep],v₃[keep]]
+   end
 
     v₁,v₂,v₃ = circshift(v_shifted,i-1)
 
