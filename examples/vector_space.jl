@@ -1,6 +1,6 @@
 using DPC,LinearAlgebra, Printf, SparseArrays, Random, Distributions, CairoMakie
 include("utils.jl")
-include(joinpath(@__DIR__, "concept_space", "utils.jl"))
+include(joinpath(@__DIR__, "vector_space", "utils.jl"))
 
 
 ## Define experimental parameters ##############################################
@@ -279,7 +279,7 @@ plot!(ax_n, objects[:S3],
     color=Dict(:S3=>color_3, :S2=>color_2, :S1=>color_1)
 )
 
-save("concept_space.svg", fig)
+
 
 colsize!(fig.layout, 1, Relative(0.6))
 colsize!(fig.layout, 3, Relative(0.1))
@@ -292,6 +292,10 @@ rowgap!(fig.layout, 3, 0)
 fig
 ##
 
+
+save(joinpath(@__DIR__, "figures","vector_space.pdf"), fig)
+save(joinpath(@__DIR__, "figures","vector_space.svg"), fig)
+save(joinpath(@__DIR__, "figures","vector_space.png"), fig)
 
 # fn(x)=all(x.> 0)
 # fn(x)=all((gramian_n*x).>0)

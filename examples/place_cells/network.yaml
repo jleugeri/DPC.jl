@@ -1,5 +1,5 @@
 spike_duration: 5.00e-3
-refractory_duration: 5.01e-3
+refractory_duration: 100.0e-3
 plateau_duration: 100.0e-3
 inputs:
 - id: i101
@@ -65,14 +65,14 @@ inputs:
 neurons:
 - id: n
   θ_seg: 1
-  θ_syn: 8 #5
+  θ_syn: 12 #5
   branches: 
     - id: seg2
       θ_seg: 1
-      θ_syn: 8 #5
+      θ_syn: 12 #5
       branches: 
         - id: seg1
-          θ_syn: 8 #5
+          θ_syn: 12 #5
 synapses:
 - {id: syn101, source: i101, delay: 1e-3, target: seg1, weight: 1.0} # [1.0, 0.5]
 - {id: syn102, source: i102, delay: 1e-3, target: seg1, weight: 1.0} # [1.0, 0.5]

@@ -6,7 +6,7 @@ using StochasticDiffEq
 
 # Path parameters:
 path_params = ( 
-    v̄ = 0.25,   # the average velocity of the path
+    v̄ = 0.5,   # the average velocity of the path
     γ = 10.0,   # the convergence rate with which the momentary velocity relaxes back to the `v̄`
     aₐ= 0.25,   # the scale of acceleration in the angle component
     aᵥ= 0.1     # the scale of acceleration in the velocity component
@@ -29,10 +29,10 @@ gridcell_centers = [
     [cos(2π*1/6)*grid_params.r+0.5*grid_params.xscale,sin(2π*1/6)*grid_params.r+0.5*grid_params.yscale], 
 ]
 
-λ = 50.0                                #[Hz] rate at which population spikes are emitted
+λ = 250.0                                #[Hz] rate at which population spikes are emitted
 λ_background = 10.0                     #[Hz] rate at which population spikes are emitted
 t_jitter = 5.0e-3
-path_trange = (0.0, 0.2)              # duration of generated path
+path_trange = (0.0, 0.1)              # duration of generated path
 r = 1.5*grid_params.r                   # distance of path start-point from center
 v_opt = 2r/(path_trange[2]-path_trange[1])  # velocity of the generated path (set such that path is symmetric around middle)
 trials = 500                            # number of trials over which to average the response probability
