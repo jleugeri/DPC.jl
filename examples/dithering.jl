@@ -83,33 +83,52 @@ p_opt = fill(1.0, max_N)
 end
 
 ## Plot figure
-fig = Figure(resolution=(0.75textwidth,0.35textwidth))
+fig = Figure(resolution=(0.75textwidth,0.6textwidth))
 h = nothing
-for (i,N) in enumerate((1,25))
-    # plot heatmap
-    ax = fig[1,i] = Axis(fig, titlealign=:left, title=["A","B"][i]*".    "*(N==1 ? "single detector" : "$(N) detectors"), ylabel="Dendritic threshold", yminorticksvisible=true, xminorticksvisible=true, xminorticks=IntervalsBetween(5), yminorticks=IntervalsBetween(5))
-    Label(fig[1, 1:2, Bottom()], "Synaptic transmission probability", valign = :top, padding = (0, 0, 0, 25))
 
-    II .= I.(reshape(pp,(:,1)),reshape(θθ,(1,:)),Ref(P_X),N)
-    h = heatmap!(ax, pp, θθ, II, colormap = :heat, colorrange=(0.0,2.5))
+ax1 = fig[1,1] = Axis(fig; title="A    single segment", xlabel="spike volley size (X)", ylabel="number of plateaus (N)", yticks=[0,1])
+ax2 = fig[1,2] = Axis(fig; title="B    $(max_N) segments", xlabel="spike volley size (X)")
 
-    if i!=1
-        hideydecorations!(ax, ticks=false, minorticks=false)
-    end
 
-    # plot 
-    lines!(ax, p_opt, θ_opt, color=:black)
-    hlines!(ax, [θ_opt[N]], linestyle=:dash, linewidth=1, color=:gray)
-    vlines!(ax, [p_opt[N]], linestyle=:dash, linewidth=1, color=:gray)
-    scatter!(ax, [p_opt[N]], [θ_opt[N]], markersize=5, color=:red, strokecolor=:black, strokewidth=1)
 
-end
-Colorbar(fig[1,3], h, label = "I(N;X) in bits")
+linkxaxes!(ax1,ax2)
 
-colgap!(fig.layout, 2, 0.05textwidth)
-display(fig)
+xx = collect(1:x_max)
+stairs!(ax1, xx, [p_z_x(1,x,p_opt[1],θ_opt[1],P_X) for x in xx], color=color_1, linewidth=3,step=:center)
+#vlines!(ax1, [θ_opt[1]], linestyle=:dash)
 
+
+N = max_N
+nn = collect(0:N)
+P = [p_n_x(n,x,p_opt[N],θ_opt[N],P_X,N) for x in xx, n in nn]
+E_n = [N .* p_z_x(1,x,p_opt[N],θ_opt[N],P_X) for x in xx]
+
+hm=heatmap!(ax2, xx[θ_opt[N]:end], nn, P[θ_opt[N]:end,:], colormap=(RGBAf0(0.9,0.9,0.9,1.0),RGBAf0(0.0,0.0,0.0,1.0)), colorrange=(0,0.2))
+translate!(hm,0,0,-100)
+lines!(ax2, xx, E_n, linewidth=3, color=color_2)
+#vlines!(ax2, [θ_opt[N]], linestyle=:dash)
+
+fig[1,3] = Colorbar(fig, hm, label=L"P(N|X)", size=5)
+
+ax3 = fig[2,1:3] = Axis(fig; title="C    Optimal stochasticity", ylabel=L"opt. \theta", xlabel="number of segments", xscale=log10, yscale=log10, yaxisposition=:right, ylabelcolor=:gray, yticklabelcolor=:gray, yticks=[4,5,6,7,8,9,10,11], xticks=([1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100],["1","2","3","","","","","","","10","20","30","","","","","","","100"]))
+stairs!(ax3, 1:max_N, θ_opt, color=:gray, step=:center)
+
+fn(x) = (x-4)/(11-4) * (1.0-p_opt[N])+p_opt[N]
+
+ax4 = fig[2,1:3] = Axis(fig; xscale=log10, yscale=log10, yticks=fn.([4,5,6,7,8,9,10,11]), ylabel=L"P_{syn}",ytickformat="{:.2f}")
+stairs!(ax4, 1:max_N, p_opt, color=:black, step=:center)
+
+scatter!(ax4,[1,N],[p_opt[1],p_opt[N]],markersize=10,color=[color_1,color_2])
+
+#lines!(ax4, 1:max_N, 1 ./ sqrt.(2 .* (1:max_N)), color=:black, linestyle=:dash)
+
+hidexdecorations!(ax4)
+
+linkxaxes!(ax3,ax4)
+
+fig
+##
 ## save result
-save(joinpath("figures","dithering.png"), fig)
-save(joinpath("figures","dithering.svg"), fig)
-save(joinpath("figures","dithering.pdf"), fig)
+save(joinpath(@__DIR__, "figures","dithering.png"), fig)
+save(joinpath(@__DIR__, "figures","dithering.svg"), fig)
+save(joinpath(@__DIR__, "figures","dithering.pdf"), fig)
