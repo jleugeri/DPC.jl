@@ -1,4 +1,5 @@
 using DPC
+using Colors
 import CairoMakie
 Makie = CairoMakie.Makie
 import ColorTypes: RGB
@@ -18,11 +19,13 @@ function make_manual_ticks(manual_ticks, manual_labels)
 end
 
 
-pal = Makie.Palette(:Dark2)
+pal = [colorant"#fcaf3e",colorant"#729fcf",colorant"#ad7fa8",colorant"#ef5e29",colorant"#98e289",colorant"#fce94f"]
+
 
 mytheme = Makie.Theme(
     fontsize = 12,
     font = "Linux Libertine O",
+    palette = (color=pal,),
     Axis = (
         backgroundcolor = :gray90,
         leftspinevisible = false,
@@ -58,16 +61,16 @@ presentation_theme[:Axis][:ylabelsize][] = 26
 presentation_theme[:fontsize][] = 26
 
 
-color_1 = pal.colors[1]
+color_1 = pal[1]
 color_1_50 = Makie.RGBAf0(color_1.r,color_1.g,color_1.b,0.5)
 color_1_25 = Makie.RGBAf0(color_1.r,color_1.g,color_1.b,0.25)
-color_2 = pal.colors[2]
+color_2 = pal[2]
 color_2_50 = Makie.RGBAf0(color_2.r,color_2.g,color_2.b,0.5)
 color_2_25 = Makie.RGBAf0(color_2.r,color_2.g,color_2.b,0.25)
-color_3 = pal.colors[3]
+color_3 = pal[3]
 color_3_50 = Makie.RGBAf0(color_3.r,color_3.g,color_3.b,0.5)
 color_3_25 = Makie.RGBAf0(color_3.r,color_3.g,color_3.b,0.25)
-color_4 = pal.colors[4]
+color_4 = pal[4]
 color_4_50 = Makie.RGBAf0(color_4.r,color_4.g,color_4.b,0.5)
 color_4_25 = Makie.RGBAf0(color_4.r,color_4.g,color_4.b,0.25)
 

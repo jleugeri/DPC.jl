@@ -22,9 +22,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:document-units="pt"
      showgrid="false"
-     inkscape:zoom="1.4010493"
-     inkscape:cx="284.07279"
-     inkscape:cy="231.61211"
+     inkscape:zoom="3.9627658"
+     inkscape:cx="177.149"
+     inkscape:cy="132.6094"
      inkscape:window-width="2486"
      inkscape:window-height="1376"
      inkscape:window-x="74"
@@ -3847,7 +3847,7 @@
       <stop
          id="stop4854"
          offset="0"
-         style="stop-color:#1b9f77;stop-opacity:1" />
+         style="stop-color:#fcaf3e;stop-opacity:1" />
       <stop
          id="stop4856"
          offset="1"
@@ -3870,7 +3870,7 @@
       <stop
          id="stop4848"
          offset="0"
-         style="stop-color:#da5f02;stop-opacity:1" />
+         style="stop-color:#729fcf;stop-opacity:1" />
       <stop
          id="stop4850"
          offset="1"
@@ -3893,7 +3893,7 @@
       <stop
          id="stop4860"
          offset="0"
-         style="stop-color:#7570b4;stop-opacity:1" />
+         style="stop-color:#ad7fa8;stop-opacity:1" />
       <stop
          id="stop4862"
          offset="1"
@@ -6099,35 +6099,35 @@
            y="21.391594">A</tspan></text>
       <text
          xml:space="preserve"
-         style="font-size:14px;line-height:1.25;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;display:inline;fill:#21a07a;fill-opacity:0.960784;stroke-width:0.75"
+         style="font-size:14px;line-height:1.25;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;display:inline;fill:#fcaf3e;fill-opacity:0.960784;stroke-width:0.75"
          x="68.106911"
          y="91.203255"
          id="text26239-7"><tspan
            sodipodi:role="line"
            id="tspan26237-9"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';fill:#21a07a;fill-opacity:0.960784;stroke-width:0.75"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';fill:#fcaf3e;fill-opacity:0.960784;stroke-width:0.75"
            x="68.106911"
            y="91.203255">A</tspan></text>
       <text
          xml:space="preserve"
-         style="font-size:14px;line-height:1.25;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;display:inline;fill:#da6106;fill-opacity:0.976471;stroke-width:0.75"
+         style="font-size:14px;line-height:1.25;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;display:inline;fill:#729fcf;fill-opacity:0.976471;stroke-width:0.75"
          x="79.862396"
          y="69.636238"
          id="text26239-7-2"><tspan
            sodipodi:role="line"
            id="tspan26237-9-0"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';fill:#da6106;fill-opacity:0.976471;stroke-width:0.75"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';fill:#729fcf;fill-opacity:0.976471;stroke-width:0.75"
            x="79.862396"
            y="69.636238">B</tspan></text>
       <text
          xml:space="preserve"
-         style="font-size:14px;line-height:1.25;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;display:inline;fill:#7571b4;fill-opacity:0.988235;stroke-width:0.75"
+         style="font-size:14px;line-height:1.25;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;display:inline;fill:#ad7fa8;fill-opacity:0.988235;stroke-width:0.75"
          x="92.12616"
          y="49.809299"
          id="text26239-7-2-2"><tspan
            sodipodi:role="line"
            id="tspan26237-9-0-3"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';fill:#7571b4;fill-opacity:0.988235;stroke-width:0.75"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;font-family:'Linux Biolinum O';-inkscape-font-specification:'Linux Biolinum O';fill:#ad7fa8;fill-opacity:0.988235;stroke-width:0.75"
            x="92.12616"
            y="49.809299">C</tspan></text>
       <text

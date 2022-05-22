@@ -179,7 +179,9 @@ for (i,duration) in enumerate((0.2,0.1,0.02))
     end
 
     for (j,p) in enumerate((plateau_extended_1,plateau_extended_2))
-        vlines!(spike_axes[i,j], 1000.0 .* (p.t .- first_spike), color=RGBAf0(0.0,0.0,0.0,0.05), linewidth=2)
+        if (!isempty(p.t)) 
+            vlines!(spike_axes[i,j], 1000.0 .* (p.t .- first_spike), color=RGBAf0(0.0,0.0,0.0,0.05), linewidth=2)
+        end
     end
 
 end
