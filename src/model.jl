@@ -20,6 +20,7 @@ mutable struct Segment{ID,T,WT,IT} <: NeuronOrSegment{ID,T,WT,IT}
     θ_syn::IT
     θ_seg::Int
     plateau_duration::T
+    can_retrigger::Bool
 
     state_syn::IT
     state_seg::Int
@@ -31,8 +32,8 @@ mutable struct Segment{ID,T,WT,IT} <: NeuronOrSegment{ID,T,WT,IT}
     next_upstream::Vector{Segment{ID,T,WT,IT}}
     net::AbstractNetwork{ID,T,WT,IT}
 
-    function Segment(id::ID, root::NeuronOrSegment{ID,T,WT,IT}; θ_syn=1, θ_seg=1, plateau_duration=root.net.default_plateau_duration) where {ID,T,WT,IT}
-        this = new{ID,T,WT,IT}(id, θ_syn, θ_seg, plateau_duration, zero(IT), 0, voltage_low, false, zero(T), root, Segment{ID,T,WT,IT}[], root.net)
+    function Segment(id::ID, root::NeuronOrSegment{ID,T,WT,IT}; θ_syn=1, θ_seg=1, plateau_duration=root.net.default_plateau_duration, can_retrigger=root.net.default_can_retrigger) where {ID,T,WT,IT}
+        this = new{ID,T,WT,IT}(id, θ_syn, θ_seg, plateau_duration, can_retrigger, zero(IT), 0, voltage_low, false, zero(T), root, Segment{ID,T,WT,IT}[], root.net)
         push!(root.next_upstream, this)
         return this
     end
@@ -120,15 +121,16 @@ mutable struct Network{ID,T,WT,IT} <: AbstractNetwork{ID,T,WT,IT}
     default_delay::T
     default_spike_duration::T
     default_plateau_duration::T
+    default_can_retrigger::Bool
 
     Network(;
         id_type::Type=Symbol, time_type::Type=Float64, weight_type::Type=Int, synaptic_input_type::Type=Int, 
-        default_refractory_duration = 1.0, default_delay = 1.0, default_spike_duration = 5.0, default_plateau_duration = 100.0
+        default_refractory_duration = 1.0, default_delay = 1.0, default_spike_duration = 5.0, default_plateau_duration = 100.0, default_can_retrigger = false
     ) = new{id_type, time_type, weight_type, synaptic_input_type}(
             Input{id_type, time_type, weight_type, synaptic_input_type}[], 
             Output{id_type, time_type, weight_type, synaptic_input_type}[], 
             Neuron{id_type, time_type, weight_type, synaptic_input_type}[],
-            default_refractory_duration, default_delay, default_spike_duration, default_plateau_duration
+            default_refractory_duration, default_delay, default_spike_duration, default_plateau_duration, default_can_retrigger
         )
 end
 
@@ -249,7 +251,7 @@ end
 """Check if this segment was just turned on; if so, backpropagate!"""
 function maybe_on!(obj::Segment, now, queue!, logger!)
     update_state!(obj)
-    return if obj.active && obj.state_syn >= obj.θ_syn #&& (isempty(obj.next_upstream) || obj.state == voltage_elevated)
+    return if obj.can_retrigger && obj.active && obj.state_syn >= obj.θ_syn #&& (isempty(obj.next_upstream) || obj.state == voltage_elevated)
         # if the segment is already on, but there is sufficient EPSP, re-trigger!
         @debug "$(now): Re-triggered segment $(obj.id) and extended its plateau!"
         logger!(now, :plateau_extended, obj.id, obj.state)

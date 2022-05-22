@@ -60,6 +60,7 @@ function load_network(YAML_file=nothing; YAML_source=nothing, id_type=Symbol, ti
     parse_kwarg!(kwargs, obj, :default_delay, time_type, "delay")
     parse_kwarg!(kwargs, obj, :default_spike_duration, time_type, "spike_duration")
     parse_kwarg!(kwargs, obj, :default_plateau_duration, time_type, "plateau_duration")
+    parse_kwarg!(kwargs, obj, :default_can_retrigger, Bool, "can_retrigger")
     
     if ~isempty(obj)
         @warn "The following network parameters could not be parsed: $(join(keys(obj), ", "))"
@@ -79,6 +80,7 @@ function load_network(YAML_file=nothing; YAML_source=nothing, id_type=Symbol, ti
         
         kwargs = Dict{Symbol,Any}()
         parse_kwarg!(kwargs, branch, :plateau_duration, time_type)
+        parse_kwarg!(kwargs, branch, :can_retrigger, Bool)
         parse_kwarg!(kwargs, branch, :θ_syn, synaptic_input_type)
         parse_kwarg!(kwargs, branch, :θ_seg, Int)
 
