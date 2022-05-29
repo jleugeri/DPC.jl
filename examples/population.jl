@@ -4,16 +4,21 @@ input_dim = 100
 num_words = 10
 spikes_per_word = 30
 target_sequence_length = 10
-num_distractor_sequences = 9
+num_sequences = 10
 
 subsequence_length = 3
-num_subsequences = 10
+num_subsequences_per_target = 10
 num_synapses_per_word = 20
 num_neurons_per_subsequence = spikes_per_word
 
 metasequence_length = 3
-num_metasequences = 10
+num_metasequences_per_target = 10
 num_synapses_per_subsequence = num_synapses_per_word
+
+neurons_input = input_dim
+neurons_first_layer = num_sequences*num_subsequences_per_target*num_neurons_per_subsequence
+neurons_second_layer = num_sequences*num_metasequences_per_target
+num_neurons = neurons_input + neurons_first_layer + neurons_second_layer
 
 P_syn = 0.5
 θ_syn = 15
@@ -30,25 +35,29 @@ for word in 1:num_words
 end
 
 ## generate sequences
-sequences = [(sample(1:num_words, target_sequence_length) for i in 1:num_distractor_sequences+1)...;;]
-sequence_timings = cumsum(rand(syllable_dist,target_sequence_length,num_distractor_sequences+1), dims=1)
+sequences = [(sample(1:num_words, target_sequence_length) for i in 1:num_sequences)...;;]
+sequence_timings = cumsum(rand(syllable_dist,target_sequence_length,num_sequences), dims=1)
 
 ## generate subsequences
-subsequence_positions = zeros(Int,num_subsequences)
-subsequences = zeros(Int,subsequence_length,num_subsequences)
-for n in 1:num_subsequences
-    idx = sample(1:target_sequence_length, subsequence_length; replace=false)
-    sort!(idx)
-    subsequence_positions[n] = idx[end]
-    subsequences[:,n] = sequences[idx,1]
+subsequence_positions = zeros(Int,num_subsequences_per_target,num_sequences)
+subsequences = zeros(Int,subsequence_length,num_subsequences_per_target, num_sequences)
+for i in 1:num_sequences
+    for n in 1:num_subsequences_per_target
+        idx = sample(1:target_sequence_length, subsequence_length; replace=false)
+        sort!(idx)
+        subsequence_positions[n,i] = idx[end]
+        subsequences[:,n,i] = sequences[idx,i]
+    end
 end
 
 ## generate metasequences
-metasequences = zeros(Int, metasequence_length, num_metasequences)
-for n in 1:num_metasequences
-    idx = sample(1:num_subsequences, metasequence_length; replace=false)
-    order=sortperm(subsequence_positions[idx])
-    metasequences[:,n] = idx[order]
+metasequences = zeros(Int, metasequence_length, num_metasequences_per_target, num_sequences)
+for i in 1:num_sequences
+    for n in 1:num_metasequences_per_target
+        idx = sample(1:num_subsequences_per_target, metasequence_length; replace=false)
+        order=sortperm(subsequence_positions[idx,i])
+        metasequences[:,n,i] = idx[order]
+    end
 end
 
 ## generate network
@@ -60,60 +69,63 @@ for i in 1:input_dim
 end
 
 # subsequence neurons
-subseq_neurons = Dict{Tuple{Int,Int},Neuron}()
-for n in 1:num_subsequences
-    subsequence = subsequences[:,n]
-    for i in 1:num_neurons_per_subsequence
-        j=1
-        root = Neuron(Symbol("subseq_$(n)_$(i)_1"), net; θ_syn)
-        subseq_neurons[(n,i)]=root
-
-        idx,_ = findnz(codebook[:,subsequence[end+1-j]])
-        sub_idx = sample(idx, num_synapses_per_word; replace=false)
-        sort!(sub_idx)
-        for (k,s) in enumerate(sub_idx)
-            Synapse(Symbol("subseq_$(n)_$(i)_$(j)_$(k)"), net.inputs[s], root; )
-        end
-
-        for j in 2:subsequence_length
-            root=Segment(Symbol("subseq_$(n)_$(i)_$(j)"), root; θ_syn)
+subseq_neurons = Dict{Tuple{Int,Int,Int},Neuron}()
+for tgt in 1:num_sequences
+    for n in 1:num_subsequences_per_target
+        subsequence = subsequences[:,n,tgt]
+        for i in 1:num_neurons_per_subsequence
+            j=1
+            root = Neuron(Symbol("subseq_$(tgt)_$(n)_$(i)_1"), net; θ_syn)
+            subseq_neurons[(tgt,n,i)]=root
 
             idx,_ = findnz(codebook[:,subsequence[end+1-j]])
             sub_idx = sample(idx, num_synapses_per_word; replace=false)
             sort!(sub_idx)
             for (k,s) in enumerate(sub_idx)
-                Synapse(Symbol("subseq_$(n)_$(i)_$(j)_$(k)"), net.inputs[s], root)
+                Synapse(Symbol("subseq_$(tgt)_$(n)_$(i)_$(j)_$(k)"), net.inputs[s], root; )
             end
+
+            for j in 2:subsequence_length
+                root=Segment(Symbol("subseq_$(tgt)_$(n)_$(i)_$(j)"), root; θ_syn)
+
+                idx,_ = findnz(codebook[:,subsequence[end+1-j]])
+                sub_idx = sample(idx, num_synapses_per_word; replace=false)
+                sort!(sub_idx)
+                for (k,s) in enumerate(sub_idx)
+                    Synapse(Symbol("subseq_$(tgt)_$(n)_$(i)_$(j)_$(k)"), net.inputs[s], root)
+                end
+            end
+            root.θ_seg = 0
         end
-        root.θ_seg = 0
     end
 end
 
 # metasequence neurons
-for n in 1:num_metasequences
-    metasequence = metasequences[:, n]
-    j=1
-    root = Neuron(Symbol("metaseq_$(n)_1"), net; θ_syn)
-
-    meta_idx = sample(1:num_neurons_per_subsequence, num_synapses_per_subsequence; replace=false)
-    sort!(meta_idx)
-    for (k,s) in enumerate(meta_idx)
-        Synapse(Symbol("metaseq_$(n)_$(j)_$(k)"), subseq_neurons[(metasequence[end+1-j],s)], root)
-    end
-
-    for j in 2:subsequence_length
-        root=Segment(Symbol("metaseq_$(n)_$(j)"), root; θ_syn)
+for tgt in 1:num_sequences
+    for n in 1:num_metasequences_per_target
+        metasequence = metasequences[:, n, tgt]
+        j=1
+        root = Neuron(Symbol("metaseq_$(tgt)_$(n)_1"), net; θ_syn)
 
         meta_idx = sample(1:num_neurons_per_subsequence, num_synapses_per_subsequence; replace=false)
         sort!(meta_idx)
         for (k,s) in enumerate(meta_idx)
-            Synapse(Symbol("metaseq_$(n)_$(j)_$(k)"), subseq_neurons[(metasequence[end+1-j],s)], root)
+            Synapse(Symbol("metaseq_$(tgt)_$(n)_$(j)_$(k)"), subseq_neurons[(tgt,metasequence[end+1-j],s)], root)
         end
-    end 
 
-    root.θ_seg = 0
+        for j in 2:subsequence_length
+            root=Segment(Symbol("metaseq_$(tgt)_$(n)_$(j)"), root; θ_syn)
+
+            meta_idx = sample(1:num_neurons_per_subsequence, num_synapses_per_subsequence; replace=false)
+            sort!(meta_idx)
+            for (k,s) in enumerate(meta_idx)
+                Synapse(Symbol("metaseq_$(tgt)_$(n)_$(j)_$(k)"), subseq_neurons[(tgt,metasequence[end+1-j],s)], root)
+            end
+        end 
+
+        root.θ_seg = 0
+    end
 end
-
 
 
 ##
@@ -167,34 +179,53 @@ input=[Event(:input_spikes, 0.0, t, net.inputs[inp]) for (t, inp) in zip(res.tim
 
 logger=simulate!(net, input)
 
+# Example frequencies of event types:
+#  :upstate_start          => 64127
+#  :epsp_starts            => 30111528
+#  :epsp_ends              => 30111528
+#  :refractory_period_ends => 52929
+#  :upstate_ends           => 54398
+#  :plateau_starts         => 71634
+#  :backprop               => 181234
+#  :spikes                 => 52929
+#  :plateau_ends           => 71634
+
 ##
 
 first_order_spike_events = filter([:event,:object] => (e,o)-> e==:spikes && startswith(string(o),"subseq_"),logger.data)
 
 second_order_spike_events = filter([:event,:object] => (e,o)-> e==:spikes && startswith(string(o),"metaseq_"),logger.data)
 
-lookup = Dict(Symbol("subseq_$(i)_$(j)_1") => (i-1)*num_neurons_per_subsequence+j for i in 1:num_subsequences for j in 1:num_neurons_per_subsequence)
+lookup = Dict(Symbol("subseq_$(tgt)_$(i)_$(j)_1") => ((tgt-1)*num_subsequences_per_target + i-1)*num_neurons_per_subsequence+j for tgt in 1:num_sequences for i in 1:num_subsequences_per_target for j in 1:num_neurons_per_subsequence)
 first_order_spike_events[!,:idx] = getindex.(Ref(lookup),first_order_spike_events[!,:object])
 
-lookup = Dict(Symbol("metaseq_$(i)_1") => i for i in 1:num_metasequences)
+lookup = Dict(Symbol("metaseq_$(tgt)_$(i)_1") => (tgt-1)*num_subsequences_per_target+i for tgt in 1:num_sequences for i in 1:num_metasequences_per_target)
+target_lookup = Dict(Symbol("metaseq_$(tgt)_$(i)_1") => tgt for tgt in 1:num_sequences for i in 1:num_metasequences_per_target)
 second_order_spike_events[!,:idx] = getindex.(Ref(lookup),second_order_spike_events[!,:object])
+second_order_spike_events[!,:tgt] = getindex.(Ref(target_lookup),second_order_spike_events[!,:object])
 
 ##
 
 fig = Figure(resolution = (0.75textwidth, 0.6textwidth))
 ax1 = fig[1,1] = Axis(fig; title="A    Input sequences", titlealign=:left, height=18, backgroundcolor=:transparent)
-ax2 = fig[2,1] = Axis(fig; title="B    Input spikes", titlealign=:left)
-ax3 = fig[3,1] = Axis(fig; title="C    Spikes of first layer neurons", titlealign=:left)
-ax4 = fig[4,1] = Axis(fig; title="D    Spikes of second layer neurons", titlealign=:left, xlabel="time [ms]", xticks=LinearTicks(11))
+ax2 = fig[2,1] = Axis(fig; title="B    Input spikes ($(neurons_input) neurons)", titlealign=:left)
+ax3 = fig[3,1] = Axis(fig; title="C    Spikes in first layer ($(neurons_first_layer) neurons)", titlealign=:left)
+ax4 = fig[4,1] = Axis(fig; title="D    Spikes in second layer ($(neurons_second_layer) neurons)", titlealign=:left, xlabel="time [ms]", xticks=LinearTicks(11))
 hidedecorations!(ax1)
 
-scatter!(ax1, Point2f0.(res.sequence_times, 0.0), markersize=16, color=ifelse.(res.sequence .== 0, :silver,ifelse.(res.sequence .== 1, Ref(color_1), :gray)))
+scatter!(ax1, Point2f0.(res.sequence_times, 0.0), markersize=16, color=res.sequence)
 annotations!(ax1, string.(res.sequence), Point2f0.(res.sequence_times, 0.0), align=(:center,:center),color=:white, offset=(-1,1), textsize=14)
 
-scatter!(ax2, res.times, res.input_indices, markersize=1, color=ifelse.(res.sequence_indices .== 1, Ref(color_1),:gray))
+scatter!(ax2, res.times[res.sequence_indices .== 0], res.input_indices[res.sequence_indices .== 0], markersize=1, color=:gray)
+scatter!(ax2, res.times[res.sequence_indices .!= 0], res.input_indices[res.sequence_indices .!= 0], markersize=1, color=res.sequence_indices[res.sequence_indices .!= 0])
 
 scatter!(ax3, first_order_spike_events[!,:t], first_order_spike_events[!,:idx], color=:gray, markersize=1)
-scatter!(ax4, second_order_spike_events[!,:t], second_order_spike_events[!,:idx], color=color_1, markersize=2)
+
+sequence_time_ranges = extrema(sequence_timings, dims=1)
+for (t,s) in zip(res.sequence_times, res.sequence)
+    poly!(ax4,Rect(t+sequence_time_ranges[s][1],(s-1)*num_metasequences_per_target, sequence_time_ranges[s][2]-sequence_time_ranges[s][1], num_metasequences_per_target), color=:silver)
+end
+scatter!(ax4, second_order_spike_events[!,:t], second_order_spike_events[!,:idx], color=second_order_spike_events[!,:tgt], markersize=2)
 
 #ylims!(ax1,0,150)
 xlims!(ax1,(-100,10100))
@@ -205,9 +236,9 @@ hideydecorations!(ax4)
 hidexdecorations!(ax2, grid=false)
 hidexdecorations!(ax3, grid=false)
 
-rowsize!(fig.layout, 2, Relative(10.0/45))
-rowsize!(fig.layout, 3, Relative(30.0/45))
-rowsize!(fig.layout, 4, Relative(2.0/45))
+rowsize!(fig.layout, 2, Relative(0.25))
+rowsize!(fig.layout, 3, Relative(0.4))
+rowsize!(fig.layout, 4, Relative(0.25))
 
 fig
 
@@ -254,7 +285,7 @@ y,x,_=findnz(codebook[:,1:num_words])
 scatter!(ax3, x, y, markersize=3, color=x)
 
 
-for i in 1:(num_distractor_sequences+1)
+for i in 1:(num_sequences)
     ax_i1 = fig2[2,1+i] = Axis(fig2; height=18, backgroundcolor=:transparent)
     hidedecorations!(ax_i1)
     
@@ -280,15 +311,15 @@ hideydecorations!(ax_x)
 
 
 gl = fig2[1:3,12] = GridLayout()
-ax_s1= gl[1,1] = Axis(fig2; title="D    1st layer", titlealign=:left, xlims=(0,1),ylims=(-num_subsequences-1,1), backgroundcolor=:transparent)
+ax_s1= gl[1,1] = Axis(fig2; title="D    1st layer", titlealign=:left, xlims=(0,1),ylims=(-num_subsequences_per_target-1,1), backgroundcolor=:transparent)
 hidedecorations!(ax_s1)
-annotations!(ax_s1, ["S$(Char('₀'+i-1)):  "*join([Char('A' + c-1) for c in col],"→") for (i,col) in enumerate(eachcol(subsequences)) ], Point2f0.(0,-1:-1:-num_subsequences); textsize=12, align=(:left,:center))
+annotations!(ax_s1, ["S$(Char('₀'+i-1)):  "*join([Char('A' + c-1) for c in col],"→") for (i,col) in enumerate(eachcol(subsequences)) ], Point2f0.(0,-1:-1:-num_subsequences_per_target); textsize=12, align=(:left,:center))
 xlims!(ax_s1, (0,1))
 
 
 ax_s2= gl[2,1] = Axis(fig2; title="E    2nd layer", titlealign=:left, backgroundcolor=:transparent)
 hidedecorations!(ax_s2)
-annotations!(ax_s2, ["T$(Char('₀'+i-1)):  "*join(["S"*Char('₀' + c-1) for c in col],"→") for (i,col) in enumerate(eachcol(metasequences)) ], Point2f0.(0,-1:-1:-num_metasequences); textsize=12, align=(:left,:center))
+annotations!(ax_s2, ["T$(Char('₀'+i-1)):  "*join(["S"*Char('₀' + c-1) for c in col],"→") for (i,col) in enumerate(eachcol(metasequences)) ], Point2f0.(0,-1:-1:-num_metasequences_per_target); textsize=12, align=(:left,:center))
 xlims!(ax_s2, (0,1))
 
 colsize!(fig2.layout, 12, Relative(0.2))
