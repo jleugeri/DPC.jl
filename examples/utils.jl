@@ -8,7 +8,7 @@ CairoMakie.activate!()
 
 export statetrace!, statetrace, StateTrace
 
-const textwidth = 469.75499 / 0.75
+const latex_textwidth = 469.75499 / 0.75
 
 function make_manual_ticks(manual_ticks, manual_labels)
     @assert length(manual_ticks) == length(manual_labels)
@@ -21,6 +21,10 @@ end
 
 pal = [colorant"#fcaf3e",colorant"#729fcf",colorant"#ad7fa8",colorant"#ef5e29",colorant"#98e289",colorant"#fce94f"]
 
+dcolors = CairoMakie.Colors.distinguishable_colors(
+    10+2,
+    [[colorant"white",colorant"black"];pal]
+)[3:end]
 
 mytheme = Makie.Theme(
     fontsize = 12,
