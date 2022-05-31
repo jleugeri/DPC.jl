@@ -19,11 +19,11 @@ function make_manual_ticks(manual_ticks, manual_labels)
 end
 
 
-pal = [colorant"#fcaf3e",colorant"#729fcf",colorant"#ad7fa8",colorant"#ef5e29",colorant"#98e289",colorant"#fce94f"]
+pal = RGBA[colorant"#fcaf3e",colorant"#729fcf",colorant"#ad7fa8",colorant"#ef5e29",colorant"#98e289",colorant"#fce94f"]
 
 dcolors = CairoMakie.Colors.distinguishable_colors(
     10+2,
-    [[colorant"white",colorant"black"];pal]
+    CairoMakie.Colors.Color[[colorant"white",colorant"black"];pal]
 )[3:end]
 
 mytheme = Makie.Theme(
