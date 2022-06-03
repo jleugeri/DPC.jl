@@ -1,7 +1,7 @@
 using DPC,LinearAlgebra, Printf, SparseArrays, Random, Distributions, CairoMakie
 include("utils.jl")
 include(joinpath(@__DIR__, "vector_space", "utils.jl"))
-
+CairoMakie.activate!(type = "svg")
 
 ## Define experimental parameters ##############################################
 
@@ -163,17 +163,18 @@ A_trans,B_trans,C_trans = project_2D.((A,B,C))
 
 
 ## Draw figure #################################################################
-fig = Figure(resolution=(latex_textwidth, 0.6latex_textwidth))
+fig = Figure(resolution=(latex_textwidth, 0.6latex_textwidth), rasterize=false)
 
 # draw overview axis
 ax_left = fig[1:3,1] = Axis(fig, aspect = DataAspect(), backgroundcolor = :transparent, title="A    Input sequence on 2D manifold", titlealign=:center)
 
 # fake axis background
-r1=project_2D.(get_geodesic([1,0,0],[0,1,0],gramian_n)[2:end-1])
-r2=project_2D.(get_geodesic([0,1,0],[0,0,1],gramian_n)[2:end-1])
-r3=project_2D.(get_geodesic([0,0,1],[1,0,0],gramian_n)[2:end-1])
+r1=project_2D.(get_geodesic([1,0,0],[0,1,0],gramian_n; num_points=100)[2:end-1])
+r2=project_2D.(get_geodesic([0,1,0],[0,0,1],gramian_n; num_points=100)[2:end-1])
+r3=project_2D.(get_geodesic([0,0,1],[1,0,0],gramian_n; num_points=100)[2:end-1])
 boundary = [r1;r2;r3]
-poly!(ax_left, boundary, color=:gray90)
+
+#poly!(ax_left, boundary, color=:gray90, rasterize=false)
 
 _xlims = min(X_trans[1],Y_trans[1],Z_trans[1])-0.5,max(X_trans[1],Y_trans[1],Z_trans[1])+0.5
 _ylims = min(X_trans[2],Y_trans[2],Z_trans[2])-0.4,max(X_trans[2],Y_trans[2],Z_trans[2])+0.25
@@ -248,12 +249,17 @@ _xlims = min(X_trans[1],Y_trans[1],Z_trans[1])-0.1,max(X_trans[1],Y_trans[1],Z_t
 _ylims = min(X_trans[2],Y_trans[2],Z_trans[2])-0.25,max(X_trans[2],Y_trans[2],Z_trans[2])+0.1
 
 for (case,(w,pt)) in enumerate(zip(eachcol(p_transmit),(A_trans,B_trans,C_trans)))
-    ax_i = fig[case,2] = Axis(fig, aspect=DataAspect(), backgroundcolor = :transparent, title= case == 1 ? "B    Segments' responses" : "" )
+    ax_i = fig[case,2] = Axis(fig, aspect=DataAspect(), backgroundcolor = :white, title= case == 1 ? "B    Segments' responses" : "" )
     hidedecorations!(ax_i)
     hidespines!(ax_i)
     xlims!(ax_i, _xlims...)
     ylims!(ax_i, _ylims...)
-    mesh!(ax_i, vertices, faces, color=vec(plateau_probability_grid[case,:,:]), colorrange =(0,1))
+
+    fig_i = Figure()
+    ax_i_raster = fig_i[1,1] = Axis(fig_i; aspect=DataAspect(), backgroundcolor=:transparent)
+    mesh!(ax_i_raster, vertices, faces, color=vec(plateau_probability_grid[case,:,:]), colorrange =(0,1), rasterize=5)
+    hidedecorations!(ax_i_raster)
+    save(joinpath(@__DIR__, "figures","vector_space_mesh_$(case).png"), fig_i)
 
     # draw frame
     r1=project_2D.(get_geodesic([1,0,0],[0,1,0],gramian_n)[2:end-1])
@@ -262,7 +268,7 @@ for (case,(w,pt)) in enumerate(zip(eachcol(p_transmit),(A_trans,B_trans,C_trans)
     lines!(ax_i, Point2[[X_trans];r1;[Y_trans];r2;[Z_trans];r3;[X_trans]], color=[color_1,color_2,color_3][case], linewidth=3)
     
     scatter!(ax_i, [pt], color=[color_1,color_2,color_3][[case]])
-    annotations!(ax_i, ["A","B","C"][[case]], Point2.([A_trans,B_trans,C_trans])[[case]], align=[(:center,:bottom), (:center,:bottom), (:right,:top)][[case]], offset=Point2.([(-10.0,0.0),(0.0,5.0),(0.0,-5.0)])[[case]],textsize=18, color=[color_1,color_2,color_3][[case]], font="TeX Gyre Heros Makie Bold", strokewidth=0.5, strokecolor=:white, )
+    annotations!(ax_i, ["A","B","C"][[case]], Point2.([A_trans,B_trans,C_trans])[[case]], align=[(:center,:bottom), (:center,:bottom), (:right,:top)][[case]], offset=Point2.([(-10.0,0.0),(0.0,5.0),(0.0,-5.0)])[[case]],textsize=18, color=[color_1,color_2,color_3][[case]], font="TeX Gyre Heros Makie Bold", strokewidth=0.5, strokecolor=:white)
 
 
     # label corners
@@ -296,8 +302,8 @@ fig
 ##
 
 
-save(joinpath(@__DIR__, "figures","vector_space.pdf"), fig)
 save(joinpath(@__DIR__, "figures","vector_space.svg"), fig)
+save(joinpath(@__DIR__, "figures","vector_space.pdf"), fig)
 save(joinpath(@__DIR__, "figures","vector_space.png"), fig)
 
 # fn(x)=all(x.> 0)
