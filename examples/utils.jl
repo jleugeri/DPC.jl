@@ -8,7 +8,7 @@ CairoMakie.activate!()
 
 export statetrace!, statetrace, StateTrace
 
-const latex_textwidth = 469.75499 / 0.75
+const latex_textwidth = 505.69374 / 0.75
 
 function make_manual_ticks(manual_ticks, manual_labels)
     @assert length(manual_ticks) == length(manual_labels)

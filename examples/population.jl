@@ -224,11 +224,15 @@ ax1 = fig[1,1] = Axis(fig; title="A    Input sequences", titlealign=:left, heigh
 ax2 = fig[2,1] = Axis(fig; title="B    Input spikes ($(neurons_input) neurons)", titlealign=:left)
 ax3 = fig[3,1] = Axis(fig; title="C    Spikes in first layer ($(num_subsequence_neurons) neurons)", titlealign=:left)
 ax4 = fig[4,1] = Axis(fig; title="D    Spikes in second layer ($(num_metasequence_neurons) neurons)", titlealign=:left, xlabel="time [ms]", xticks=LinearTicks(11))
-ax5 = fig[:,2] = Axis(fig; title="E    Example: sequence $(res.sequence[end-1])", ylabel="Input spikes", xlabel="time [ms]", spine=:outer,
+ax5 = fig[:,2] = Axis(fig; title="E    Spike pattern for seq. $(res.sequence[end-1])", ylabel="Input spikes", xlabel="time [ms]", spine=:outer,
 leftspinevisible = true,
 rightspinevisible = true,
 bottomspinevisible = true,
 topspinevisible = true,)
+ax6 = fig[1,3] = Axis(fig; title="F    Code words for seq. $(res.sequence[end-1])", titlealign=:left)
+gr = fig[2:end,3] = GridLayout()
+ax7 = gr[1,1] = Axis(fig; title="G    Feature combinations", titlealign=:left)
+ax8 = gr[2,1] = Axis(fig; title="H    Connectivity", titlealign=:left)
 
 hidedecorations!(ax1)
 
@@ -264,6 +268,18 @@ scatter!(ax5, res.times[idx2], res.input_indices[idx2], markersize=5, color=dcol
 xlims!(ax5, zoom_tlims)
 hideydecorations!(ax5, label=false)
 
+# draw schema
+s = String[]
+p = Point2f0[]
+for (i,c) in enumerate(sequences[:,end-1])
+    push!(s, string(Char('A' + c-1)))
+    push!(p, (i,0))
+end
+annotations!(ax6, s, p, align=(:center,:center),color=:black, offset=(0,1), textsize=14)
+hidedecorations!(ax6)
+hidedecorations!(ax7)
+hidedecorations!(ax8)
+
 #ylims!(ax1,0,150)
 xlims!(ax1,(-100,10100))
 linkxaxes!.(Ref(ax1),(ax2,ax3,ax4))
@@ -276,7 +292,9 @@ hidexdecorations!(ax3, grid=false)
 rowsize!(fig.layout, 2, Relative(0.25))
 rowsize!(fig.layout, 3, Relative(0.4))
 rowsize!(fig.layout, 4, Relative(0.25))
-colsize!(fig.layout, 2, Relative(0.3))
+colsize!(fig.layout, 2, Relative(0.25))
+colsize!(fig.layout, 3, Relative(0.25))
+rowsize!(gr, 2, Relative(0.3))
 
 fig
 
@@ -293,12 +311,6 @@ fig2 = Figure(resolution = (latex_textwidth, 0.6latex_textwidth))
 ax_t = fig2[1,1:11] = Axis(fig2; title="A    Target sequence", titlealign=:left, height=30, backgroundcolor=:transparent)
 hidedecorations!(ax_t)
 
-s = String["1"]
-p = Point2f0[(0,0)]
-for (i,c) in enumerate(sequences[:,1])
-    push!(s, i==1 ? ": " : "→", string(Char('A' + c-1)))
-    push!(p, (i-0.5,0), (i,0))
-end
 
 scatter!(ax_t, p[3:2:end], color=sequences[:,1], markersize=16)
 scatter!(ax_t, [p[1]], color=[color_1], markersize=16)
