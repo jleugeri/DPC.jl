@@ -83,10 +83,10 @@ p_opt = fill(1.0, max_N)
 end
 
 ## Plot figure
-fig = Figure(resolution=(0.75textwidth,0.6textwidth))
+fig = Figure(resolution=(0.5latex_textwidth,0.5latex_textwidth))
 h = nothing
 
-ax1 = fig[1,1] = Axis(fig; title="A    single segment", xlabel="spike volley size (X)", ylabel="number of plateaus (N)", yticks=[0,1])
+ax1 = fig[1,1] = Axis(fig; title="A    single segment", xlabel="spike volley size (X)", ylabel="plateaus (N)", yticks=[0,1])
 ax2 = fig[1,2] = Axis(fig; title="B    $(max_N) segments", xlabel="spike volley size (X)")
 
 
@@ -94,7 +94,7 @@ ax2 = fig[1,2] = Axis(fig; title="B    $(max_N) segments", xlabel="spike volley 
 linkxaxes!(ax1,ax2)
 
 xx = collect(1:x_max)
-stairs!(ax1, xx, [p_z_x(1,x,p_opt[1],θ_opt[1],P_X) for x in xx], color=color_1, linewidth=3,step=:center)
+stairs!(ax1, xx, [p_z_x(1,x,p_opt[1],θ_opt[1],P_X) for x in xx], color=color_1, linewidth=2,step=:center)
 #vlines!(ax1, [θ_opt[1]], linestyle=:dash)
 
 
@@ -105,20 +105,20 @@ E_n = [N .* p_z_x(1,x,p_opt[N],θ_opt[N],P_X) for x in xx]
 
 hm=heatmap!(ax2, xx[θ_opt[N]:end], nn, P[θ_opt[N]:end,:], colormap=(RGBAf0(0.9,0.9,0.9,1.0),RGBAf0(0.0,0.0,0.0,1.0)), colorrange=(0,0.2))
 translate!(hm,0,0,-100)
-lines!(ax2, xx, E_n, linewidth=3, color=color_2)
+lines!(ax2, xx, E_n, linewidth=2, color=color_2)
 #vlines!(ax2, [θ_opt[N]], linestyle=:dash)
 
-fig[1,3] = Colorbar(fig, hm, label=L"P(N|X)", size=5)
+#fig[1,3] = Colorbar(fig, hm, label=L"P(N|X)", size=5)
 
-ax3 = fig[2,1:3] = Axis(fig; title="C    Optimal stochasticity", ylabel=L"opt. \theta", xlabel="number of segments", xscale=log10, yscale=log10, yaxisposition=:right, ylabelcolor=:gray, yticklabelcolor=:gray, yticks=[4,5,6,7,8,9,10,11], xticks=([1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100],["1","2","3","","","","","","","10","20","30","","","","","","","100"]))
+ax3 = fig[2,1:end] = Axis(fig; title="C    Optimal stochasticity", ylabel=L"opt. \theta", xlabel="number of segments", xscale=log10, yscale=log10, yaxisposition=:right, ylabelcolor=:gray, yticklabelcolor=:gray, yticks=[4,5,6,7,8,9,10,11], xticks=([1,2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100],["1","2","3","","","","","","","10","20","30","","","","","","","100"]))
 stairs!(ax3, 1:max_N, θ_opt, color=:gray, step=:center)
 
 fn(x) = (x-4)/(11-4) * (1.0-p_opt[N])+p_opt[N]
 
-ax4 = fig[2,1:3] = Axis(fig; xscale=log10, yscale=log10, yticks=fn.([4,5,6,7,8,9,10,11]), ylabel=L"P_{syn}",ytickformat="{:.2f}")
+ax4 = fig[2,1:end] = Axis(fig; xscale=log10, yscale=log10, yticks=fn.([4,5,6,7,8,9,10,11]), ylabel=L"P_{syn}",ytickformat="{:.2f}")
 stairs!(ax4, 1:max_N, p_opt, color=:black, step=:center)
 
-scatter!(ax4,[1,N],[p_opt[1],p_opt[N]],markersize=10,color=[color_1,color_2])
+scatter!(ax4,[1,N],[p_opt[1],p_opt[N]],markersize=8,color=[color_1,color_2])
 
 #lines!(ax4, 1:max_N, 1 ./ sqrt.(2 .* (1:max_N)), color=:black, linestyle=:dash)
 

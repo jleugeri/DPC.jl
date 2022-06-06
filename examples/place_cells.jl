@@ -55,7 +55,7 @@ show_spines = (
 
 yticks,ytickformat = make_manual_ticks(collect(0:-5:-60), vcat([""],["$(grp)$(sub)" for grp in ["A","B","C"] for sub in ["₅ ", "₁₀","₁₅","₂₀"]]))
 
-fig = Figure(resolution = (0.75textwidth, 0.6textwidth))
+fig = Figure(resolution = (0.75latex_textwidth, 0.6latex_textwidth))
 ax11 = fig[1,1] = Axis(fig; title="A    Effective paths", titlealign=:left, backgroundcolor=:transparent, xlabel="x coordinate [mm]", ylabel="y coordinate [mm]", 
     show_spines...)
 hidedecorations!(ax11)
