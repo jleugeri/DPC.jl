@@ -163,10 +163,10 @@ A_trans,B_trans,C_trans = project_2D.((A,B,C))
 
 
 ## Draw figure #################################################################
-fig = Figure(resolution=(latex_textwidth, 0.6latex_textwidth), rasterize=false)
+fig = Figure(resolution=(0.5latex_textwidth, 0.3latex_textwidth))
 
 # draw overview axis
-ax_left = fig[1:3,1] = Axis(fig, aspect = DataAspect(), backgroundcolor = :transparent, title="A    Input sequence on 2D manifold", titlealign=:center)
+ax_left = fig[1:3,1] = Axis(fig, aspect = DataAspect(), backgroundcolor = :transparent, title="A    Feature manifold", titlealign=:center)
 
 # fake axis background
 r1=project_2D.(get_geodesic([1,0,0],[0,1,0],gramian_n; num_points=100)[2:end-1])
@@ -176,8 +176,8 @@ boundary = [r1;r2;r3]
 
 #poly!(ax_left, boundary, color=:gray90, rasterize=false)
 
-_xlims = min(X_trans[1],Y_trans[1],Z_trans[1])-0.5,max(X_trans[1],Y_trans[1],Z_trans[1])+0.5
-_ylims = min(X_trans[2],Y_trans[2],Z_trans[2])-0.4,max(X_trans[2],Y_trans[2],Z_trans[2])+0.25
+_xlims = min(X_trans[1],Y_trans[1],Z_trans[1])-0.25,max(X_trans[1],Y_trans[1],Z_trans[1])+0.25
+_ylims = min(X_trans[2],Y_trans[2],Z_trans[2])-0.4,max(X_trans[2],Y_trans[2],Z_trans[2])+0.3
 xlims!(ax_left, _xlims...)
 ylims!(ax_left, _ylims...)
 hidedecorations!(ax_left)
@@ -214,7 +214,7 @@ for (i,r1) ∈ enumerate(reverse(cos.(0:0.1:acos(maximum(gramian_n[[2,3,6]])))))
 end
 
 for (labels,locations,rotations,alignment,colors) in zip(ticklabels,ticklocations,tickrotations, tickalignments, tickcolors)
-    annotations!(ax_left, labels,locations, align=alignment, rotation=rotations, color=colors, textsize=14)
+    annotations!(ax_left, labels,locations, align=alignment, rotation=rotations, color=colors, textsize=10)
 end
 
 # draw frame
@@ -226,11 +226,11 @@ end
 
 # draw the corner points
 scatter!(ax_left, [X_trans,Y_trans,Z_trans], color=corner_colors)
-annotations!(ax_left, ["P₁","P₂","P₃"], [X_trans,Y_trans,Z_trans], color=corner_colors, align=[(:right,:top),(:left,:top),(:center,:bottom)], offset=[(-10,-10),(10,-10),(0,10)], textsize=18)
+annotations!(ax_left, ["P₁","P₂","P₃"], [X_trans,Y_trans,Z_trans], color=corner_colors, align=[(:right,:top),(:left,:top),(:center,:bottom)], offset=[(-10,-10),(10,-10),(0,10)], textsize=14)
 
 # draw the points of interest
-scatter!(ax_left, [A_trans,B_trans,C_trans], color=[color_1,color_2,color_3], markersize=20)
-annotations!(ax_left, ["A","B","C"], Point2.([A_trans,B_trans,C_trans]), align=[(:center,:bottom), (:center,:top), (:right,:top)], offset=Point2.([(-10.0,10.0),(0.0,-10.0),(0.0,-10.0)]),textsize=24, font="TeX Gyre Heros Makie Bold", strokewidth=0.5, strokecolor=:white, color=[color_1,color_2,color_3])
+scatter!(ax_left, [A_trans,B_trans,C_trans], color=[color_1,color_2,color_3], markersize=12)
+annotations!(ax_left, ["A","B","C"], Point2.([A_trans,B_trans,C_trans]), align=[(:center,:bottom), (:center,:top), (:right,:top)], offset=Point2.([(-10.0,10.0),(0.0,-10.0),(0.0,-10.0)]),textsize=14, font="TeX Gyre Heros Makie Bold", strokewidth=0.5, strokecolor=:white, color=[color_1,color_2,color_3])
 
 arrows!(ax_left, Point2.([A_trans .+ 0.2.*(B_trans.-A_trans),B_trans .+ 0.2.*(C_trans.-B_trans)]), Point2.([0.6 .* (B_trans.-A_trans), 0.6 .* (C_trans.-B_trans)]), linewidth=3)
 
@@ -249,7 +249,7 @@ _xlims = min(X_trans[1],Y_trans[1],Z_trans[1])-0.1,max(X_trans[1],Y_trans[1],Z_t
 _ylims = min(X_trans[2],Y_trans[2],Z_trans[2])-0.25,max(X_trans[2],Y_trans[2],Z_trans[2])+0.1
 
 for (case,(w,pt)) in enumerate(zip(eachcol(p_transmit),(A_trans,B_trans,C_trans)))
-    ax_i = fig[case,2] = Axis(fig, aspect=DataAspect(), backgroundcolor = :white, title= case == 1 ? "B    Segments' responses" : "" )
+    ax_i = fig[case,2] = Axis(fig, aspect=DataAspect(), backgroundcolor = :white, title= case == 1 ? "B    Receptive field" : "", titlealign=:left)
     hidedecorations!(ax_i)
     hidespines!(ax_i)
     xlims!(ax_i, _xlims...)
@@ -267,8 +267,8 @@ for (case,(w,pt)) in enumerate(zip(eachcol(p_transmit),(A_trans,B_trans,C_trans)
     r3=project_2D.(get_geodesic([0,0,1],[1,0,0],gramian_n)[2:end-1])
     lines!(ax_i, Point2[[X_trans];r1;[Y_trans];r2;[Z_trans];r3;[X_trans]], color=[color_1,color_2,color_3][case], linewidth=3)
     
-    scatter!(ax_i, [pt], color=[color_1,color_2,color_3][[case]])
-    annotations!(ax_i, ["A","B","C"][[case]], Point2.([A_trans,B_trans,C_trans])[[case]], align=[(:center,:bottom), (:center,:bottom), (:right,:top)][[case]], offset=Point2.([(-10.0,0.0),(0.0,5.0),(0.0,-5.0)])[[case]],textsize=18, color=[color_1,color_2,color_3][[case]], font="TeX Gyre Heros Makie Bold", strokewidth=0.5, strokecolor=:white)
+    scatter!(ax_i, [pt], color=[color_1,color_2,color_3][[case]], markersize=5)
+    annotations!(ax_i, ["A","B","C"][[case]], Point2.([A_trans,B_trans,C_trans])[[case]], align=[(:center,:bottom), (:center,:bottom), (:right,:top)][[case]], offset=Point2.([(-10.0,0.0),(0.0,5.0),(0.0,-5.0)])[[case]],textsize=12, color=[color_1,color_2,color_3][[case]], font="TeX Gyre Heros Makie Bold", strokewidth=0.5, strokecolor=:white)
 
 
     # label corners
@@ -276,10 +276,11 @@ for (case,(w,pt)) in enumerate(zip(eachcol(p_transmit),(A_trans,B_trans,C_trans)
 
 end
 
-col3 = fig[1:3,3] = GridLayout()
+#col3 = fig[1:3,3] = GridLayout()
 
-ax_n = col3[1,1] = Axis(fig,aspect=DataAspect())
-Colorbar(col3[2, 1], limits = (0, 1), colormap = :viridis, vertical = false, flipaxis=true, label="plateau prob.", alignmode=Outside())
+#ax_n = col3[1,1] = Axis(fig,aspect=DataAspect())
+#Colorbar(col3[2, 1], limits = (0, 1), width=30, colormap = :viridis, flipaxis=false, vertical = false, label="plateau prob.")
+ax_n = fig[1:3,3] = Axis(fig,aspect=DataAspect())
 
 
 hidedecorations!(ax_n)
@@ -292,7 +293,7 @@ plot!(ax_n, objects[:S3],
 )
 
 colsize!(fig.layout, 1, Relative(0.7))
-colsize!(fig.layout, 3, Relative(0.1))
+colsize!(fig.layout, 3, Relative(0.10))
 
 colgap!(fig.layout, 1, 0)
 colgap!(fig.layout, 2, 0)

@@ -219,37 +219,37 @@ second_order_spike_events[!,:tgt] = getindex.(Ref(target_lookup),second_order_sp
 
 ##
 
-fig = Figure(resolution = (latex_textwidth, 0.6latex_textwidth))
+fig = Figure(resolution = (0.75latex_textwidth, 0.5latex_textwidth))
 ax1 = fig[1,1] = Axis(fig; title="A    Input sequences", titlealign=:left, height=18, backgroundcolor=:transparent, clip=false)
 ax2 = fig[2,1] = Axis(fig; title="B    Input spikes ($(neurons_input) neurons)", titlealign=:left)
-ax3 = fig[3,1] = Axis(fig; title="C    Spikes in first layer ($(num_subsequence_neurons) neurons)", titlealign=:left)
-ax4 = fig[4,1] = Axis(fig; title="D    Spikes in second layer ($(num_metasequence_neurons) neurons)", titlealign=:left, xlabel="time [ms]", xticks=LinearTicks(11))
-ax5 = fig[:,2] = Axis(fig; title="E    Spike pattern for seq. $(res.sequence[end-1])", ylabel="Input spikes", xlabel="time [ms]", spine=:outer,
+ax3 = fig[3,1] = Axis(fig; title="C    Feature spikes ($(num_subsequence_neurons) neurons)", titlealign=:left)
+ax4 = fig[4,1] = Axis(fig; title="D    Output spikes ($(num_metasequence_neurons) neurons)", titlealign=:left, xlabel="time [ms]", xticks=LinearTicks(6))
+ax5 = fig[:,2] = Axis(fig; title="E    Spike pattern", ylabel="Input spikes", xlabel="time [ms]", spine=:outer,
 leftspinevisible = true,
 rightspinevisible = true,
 bottomspinevisible = true,
-topspinevisible = true,)
-ax6 = fig[1,3] = Axis(fig; title="F    Code words for seq. $(res.sequence[end-1])", titlealign=:left)
+topspinevisible = true, xticks=LinearTicks(3))
+ax6 = fig[1,3] = Axis(fig; title="F    Symbols", titlealign=:left)
 gr = fig[2:end,3] = GridLayout()
-ax7 = gr[1,1] = Axis(fig; title="G    Feature combinations", titlealign=:left)
+ax7 = gr[1,1] = Axis(fig; title="G    Features", titlealign=:left)
 ax8 = gr[2,1] = Axis(fig; title="H    Connectivity", titlealign=:left)
 
 hidedecorations!(ax1)
 
-scatter!(ax1, Point2f0.(res.sequence_times, 0.0), markersize=16, color=dcolors[res.sequence])
-annotations!(ax1, string.(res.sequence), Point2f0.(res.sequence_times, 0.0), align=(:center,:center),color=:white, offset=(-1,1), textsize=14)
+scatter!(ax1, Point2f0.(res.sequence_times, 0.0), markersize=10, color=dcolors[res.sequence])
+annotations!(ax1, string.(res.sequence), Point2f0.(res.sequence_times, 0.0), align=(:center,:center),color=:white, offset=(-1,1), textsize=12)
 
-scatter!(ax2, res.times[res.sequence_indices .== 0], res.input_indices[res.sequence_indices .== 0], markersize=1, color=:gray)
-scatter!(ax2, res.times[res.sequence_indices .!= 0], res.input_indices[res.sequence_indices .!= 0], markersize=1, color=dcolors[res.sequence_indices[res.sequence_indices .!= 0]])
+scatter!(ax2, res.times[res.sequence_indices .== 0], res.input_indices[res.sequence_indices .== 0], markersize=0.5, color=:gray)
+scatter!(ax2, res.times[res.sequence_indices .!= 0], res.input_indices[res.sequence_indices .!= 0], markersize=0.5, color=dcolors[res.sequence_indices[res.sequence_indices .!= 0]])
 
 
-scatter!(ax3, first_order_spike_events[!,:t], first_order_spike_events[!,:idx], color=:gray, markersize=1)
+scatter!(ax3, first_order_spike_events[!,:t], first_order_spike_events[!,:idx], color=:gray, markersize=0.5)
 
 sequence_time_ranges = extrema(sequence_timings, dims=1)
 for (t,s) in zip(res.sequence_times, res.sequence)
     poly!(ax4,Rect(t+sequence_time_ranges[s][1]-50,(s-1)*num_metasequences_per_target-5, sequence_time_ranges[s][2]-sequence_time_ranges[s][1]+100, num_metasequences_per_target+10), color=:silver)
 end
-scatter!(ax4, second_order_spike_events[!,:t], second_order_spike_events[!,:idx], color=dcolors[second_order_spike_events[!,:tgt]], markersize=2)
+scatter!(ax4, second_order_spike_events[!,:t], second_order_spike_events[!,:idx], color=dcolors[second_order_spike_events[!,:tgt]], markersize=1)
 
 
 # draw zoom-in of ax2 into ax5
@@ -262,8 +262,8 @@ idx1 = [i for (i,x) in enumerate(res.times)
 idx2 = [i for (i,x) in enumerate(res.times)
     if zoom_tlims[1] ≤ x ≤ zoom_tlims[2] && res.sequence_indices[i] != 0]
 
-scatter!(ax5, res.times[idx1], res.input_indices[idx1], markersize=5, color=:gray)
-scatter!(ax5, res.times[idx2], res.input_indices[idx2], markersize=5, color=dcolors[res.sequence_indices[idx2]])
+scatter!(ax5, res.times[idx1], res.input_indices[idx1], markersize=2.5, color=:gray)
+scatter!(ax5, res.times[idx2], res.input_indices[idx2], markersize=2.5, color=dcolors[res.sequence_indices[idx2]])
 
 xlims!(ax5, zoom_tlims)
 hideydecorations!(ax5, label=false)
@@ -275,7 +275,7 @@ for (i,c) in enumerate(sequences[:,end-1])
     push!(s, string(Char('A' + c-1)))
     push!(p, (i,0))
 end
-annotations!(ax6, s, p, align=(:center,:center),color=:black, offset=(0,1), textsize=14)
+annotations!(ax6, s, p, align=(:center,:center),color=:black, offset=(0,1), textsize=12)
 hidedecorations!(ax6)
 hidedecorations!(ax7)
 hidedecorations!(ax8)
