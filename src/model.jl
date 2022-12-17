@@ -1,4 +1,4 @@
-export Synapse, Segment, Neuron, NeuronOrSegment,NeuronOrSegmentOrOutput,AbstractNetwork,AbstractSynapse, Network, Input, Logger, BernoulliSynapseWeight
+export Synapse, Segment, Neuron, NeuronOrSegment,NeuronOrSegmentOrOutput,AbstractNetwork,AbstractSynapse, Network, Input, Logger, BernoulliSynapseWeight, VoltageLevel, voltage_low, voltage_elevated, voltage_high
 using DataFrames: DataFrame
 
 
