@@ -74,6 +74,7 @@ function Makie.default_theme(scene::Makie.SceneLike, ::Type{<: Makie.Plot(Neuron
         color=RGBAf0(0.9,0.9,0.9,1.0),
         branch_width=0.1,
         branch_length=1.0,
+        branch_taper=1.0,
         angle_between=10/180*pi,
         xticks = [],
         root_position = Point2f0(0,0),
@@ -134,22 +135,22 @@ function Makie.plot!(treeplot::Makie.Plot(Neuron))
 
         # calculate angles for all branches
         branch_angles = cumsum(sectors) .- sectors./2 .- sector/2
+    
+        # add branch tip to node list
+        ll=maybe_get(l, tree.id)
+        branch_end = Point2f0(0.0,ll)
+        push!(all_points_flat, tree.id=>branch_end)
 
+        # add ports for branch
+        branch_ports = get(given_ports, tree.id, ID[])
+        append!(all_ports_flat, Pair.(branch_ports, LinRange(Point2f0(0,0), branch_end, length(branch_ports)+2)[2:end-1]))
+    
         for (branch, branch_angle, points, ports) in zip(tree.next_upstream, branch_angles, all_points, all_ports)
             # shift by ll and rotate by `branch_angle`
-            ll = maybe_get(l, branch.id)
+            ll = 0#maybe_get(l, branch.id)
             c=cos(branch_angle)
             s=sin(branch_angle)
-            transform = ((x,y),) -> Point2f0(c*x-s*(y+ll),s*x+c*(y+ll))
-    
-            branch_end = transform(Point2f0(0.0,0.0))
-            # add branch for branch
-            push!(all_points_flat, branch.id=>branch_end)
-    
-            # add ports for branch
-            branch_ports = get(given_ports, branch.id, ID[])
-            append!(all_ports_flat, Pair.(branch_ports, LinRange(Point2f0(0,0), branch_end, length(branch_ports)+2)[2:end-1]))
-    
+            transform = ((x,y),) -> Point2f0(c*x-s*(y+ll),s*x+c*(y+ll))+branch_end
             # keep branches from branches' subtree
             if !isempty(points)            
                 append!(all_points_flat, map(((name,pts),) -> name=>transform(pts), points))
@@ -161,13 +162,6 @@ function Makie.plot!(treeplot::Makie.Plot(Neuron))
             end
         end
 
-        if isa(tree, Neuron)
-            neuron_ports = get(given_ports, tree.id, ID[])
-
-            ww = maybe_get(w, tree.id)
-            append!(all_ports_flat, Pair.(neuron_ports, LinRange(Point2f0(0,-ww), Point2f0(0,ww), length(neuron_ports)+2)[2:end-1]))
-        end
-
         return (sector=sector, depth=depth, nodes=all_points_flat, ports=all_ports_flat, parents=all_parents_flat)
     end
 
@@ -176,10 +170,11 @@ function Makie.plot!(treeplot::Makie.Plot(Neuron))
     # get all nodes, their ports and parents in flat format
     serialized = lift(treeplot[:branch_length],treeplot[:branch_width],treeplot[:angle_between], treeplot[:ports]) do l,w,ω,prts
         ser=serialize_tree(tree,l,w,ω,prts)
-        push!(ser.nodes, tree.id => Point2f0(0.0,0.0))
+        push!(ser.nodes, :origin => Point2f0(0.0,0.0))            
+        push!(ser.parents, tree.id => :origin)
         ser
     end
-    parent = DefaultDict(tree.id, serialized[].parents...)
+
     # get all the positions of the ports
     ports = lift(serialized,offset) do ser,off
         [k=>v+off for (k,v) in ser.ports]
@@ -189,13 +184,19 @@ function Makie.plot!(treeplot::Makie.Plot(Neuron))
     for (name,parent_name) in serialized[].parents
         c  = maybe_get(treeplot[:color], name)
         w1 = maybe_get(treeplot[:branch_width], name)
-        w2 = maybe_get(treeplot[:branch_width], parent_name)
+        if parent_name == :origin
+            w2 = w1
+        else
+            w2 = maybe_get(treeplot[:branch_width], parent_name)
+        end
+        tpr = maybe_get(treeplot[:branch_taper], name)
 
         # dynamically recompute polygon
-        branch_poly = lift(w1, w2, serialized, offset) do w1,w2,ser,off
+        branch_poly = lift(w1, w2, tpr, serialized, offset) do w1,w2,tpr,ser,off
             node_dict = Dict(ser.nodes...)
             b1 = node_dict[name]
             b2 = node_dict[parent_name]
+            w2 = (1-tpr)*w1 + (tpr)*w2
             normal = [0 1; -1 0]*(b2-b1)
             normal /= sqrt(normal'*normal)*2
             Ref(off) .+ Point2f0[
@@ -225,7 +226,7 @@ function Makie.plot!(treeplot::Makie.Plot(Neuron))
     c = maybe_get(treeplot[:color], tree.id)
     w = maybe_get(treeplot[:branch_width], tree.id)
     root_poly = lift(w,offset) do w,offset
-        Point2f0[(-2w/2*√(3), -2w/2), (0,2w), (2w/2*√(3), -2w/2)].+offset
+        Point2f0[(-2w/2*√(3), 0), (0,3w), (2w/2*√(3), 0)].+offset
     end
     poly!(treeplot, root_poly, color=c, strokewidth = 1, strokecolor=c)
 

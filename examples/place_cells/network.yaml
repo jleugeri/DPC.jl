@@ -1,5 +1,5 @@
 spike_duration: 5.00e-3
-refractory_duration: 100.0e-3
+refractory_duration: 2.0e-3
 plateau_duration: 100.0e-3
 inputs:
 - id: i101

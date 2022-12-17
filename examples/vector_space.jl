@@ -8,7 +8,7 @@ CairoMakie.activate!(type = "svg")
 N = 1000            # dimensionality of the input space
 ρ = 0.2             # sparsity
 #p_back = 0.01       # background firing probability (noise!)
-θ = 150             # firing threshold of the segments
+θ = 160             # firing threshold of the segments
 num_locations = 20  # number of latitudes & longitudes on the test-point grid 
 num_samples = 1000  # number of samples to draw per location
 
@@ -219,9 +219,9 @@ end
 
 # draw frame
 if cut_to_sector
-    lines!(ax_left, Point2[[X_trans];r1;[Y_trans];r2;[Z_trans];r3;[X_trans]], color=:black, linewidth=3)
+    lines!(ax_left, Point2[[X_trans];r1;[Y_trans];r2;[Z_trans];r3;[X_trans]], color=:black, linewidth=2)
 else
-    lines!(ax_left, Point2[[X_trans];[Y_trans];[Z_trans];[X_trans]], color=:black, linewidth=3)
+    lines!(ax_left, Point2[[X_trans];[Y_trans];[Z_trans];[X_trans]], color=:black, linewidth=2)
 end
 
 # draw the corner points
@@ -265,7 +265,7 @@ for (case,(w,pt)) in enumerate(zip(eachcol(p_transmit),(A_trans,B_trans,C_trans)
     r1=project_2D.(get_geodesic([1,0,0],[0,1,0],gramian_n)[2:end-1])
     r2=project_2D.(get_geodesic([0,1,0],[0,0,1],gramian_n)[2:end-1])
     r3=project_2D.(get_geodesic([0,0,1],[1,0,0],gramian_n)[2:end-1])
-    lines!(ax_i, Point2[[X_trans];r1;[Y_trans];r2;[Z_trans];r3;[X_trans]], color=[color_1,color_2,color_3][case], linewidth=3)
+    lines!(ax_i, Point2[[X_trans];r1;[Y_trans];r2;[Z_trans];r3;[X_trans]], color=[color_1,color_2,color_3][case], linewidth=2)
     
     scatter!(ax_i, [pt], color=[color_1,color_2,color_3][[case]], markersize=5)
     annotations!(ax_i, ["A","B","C"][[case]], Point2.([A_trans,B_trans,C_trans])[[case]], align=[(:center,:bottom), (:center,:bottom), (:right,:top)][[case]], offset=Point2.([(-10.0,0.0),(0.0,5.0),(0.0,-5.0)])[[case]],textsize=12, color=[color_1,color_2,color_3][[case]], font="TeX Gyre Heros Makie Bold", strokewidth=0.5, strokecolor=:white)
@@ -287,12 +287,13 @@ hidedecorations!(ax_n)
 ax_n.backgroundcolor = :transparent
 
 plot!(ax_n, objects[:S3],
-    branch_width=1, 
-    branch_length=8.0, 
+    branch_taper=0.5,
+    branch_width=Dict(:S3=>1.0,:S1=>0.5,:S2=>0.75), 
+    branch_length=Dict(:S3=>5.0, :S1=>8.0, :S2=>8.0), 
     color=Dict(:S3=>color_3, :S2=>color_2, :S1=>color_1)
 )
 
-colsize!(fig.layout, 1, Relative(0.7))
+colsize!(fig.layout, 1, Relative(0.6))
 colsize!(fig.layout, 3, Relative(0.10))
 
 colgap!(fig.layout, 1, 0)
@@ -311,3 +312,5 @@ save(joinpath(@__DIR__, "figures","vector_space.png"), fig)
 # fn(x)=all((gramian_n*x).>0)
 
 # scatter(Point3.(p), color = ifelse.(isnan.(first.(p_p)), ifelse.(fn.(p),:orange,:red) , ifelse.(fn.(p),:green,:blue)), markersize=20)
+##
+fig

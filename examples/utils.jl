@@ -79,11 +79,12 @@ color_4_50 = Makie.RGBAf0(color_4.r,color_4.g,color_4.b,0.5)
 color_4_25 = Makie.RGBAf0(color_4.r,color_4.g,color_4.b,0.25)
 
 """
-Computes diameters for branches to satisfy Rall's condition.
+Computes diameters for branches by recursively applying `ratio_fun`.
+    By default, `ratio_fun` is chosen to satisfy Rall's condition.
 """
-function get_branch_diameters(tree::NeuronOrSegment{ID,T,WT,IT}; root_diam=1.0, diams=Dict{ID,Float64}()) where {ID,T,WT,IT}
+function get_branch_diameters(tree::NeuronOrSegment{ID,T,WT,IT}; root_diam=1.0, diams=Dict{ID,Float64}(), ratio_fun=(d,n)->(d^(3/2)/n)^(2/3)) where {ID,T,WT,IT}
     diams[tree.id] = root_diam
-    child_diam = (root_diam^(3/2)/length(tree.next_upstream))^(2/3)
+    child_diam = ratio_fun(root_diam,length(tree.next_upstream))
     for child in tree.next_upstream
         get_branch_diameters(child; root_diam=child_diam, diams=diams)
     end

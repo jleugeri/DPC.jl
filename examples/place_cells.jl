@@ -55,45 +55,52 @@ show_spines = (
 
 yticks,ytickformat = make_manual_ticks(collect(0:-5:-60), vcat([""],["$(grp)$(sub)" for grp in ["A","B","C"] for sub in ["₅ ", "₁₀","₁₅","₂₀"]]))
 
-fig = Figure(resolution = (0.75latex_textwidth, 0.6latex_textwidth))
+fig = Figure(resolution = (1latex_textwidth, 0.8latex_textwidth))
 ax11 = fig[1,1] = Axis(fig; title="A    Effective paths", titlealign=:left, backgroundcolor=:transparent, xlabel="x coordinate [mm]", ylabel="y coordinate [mm]", 
     show_spines...)
 hidedecorations!(ax11)
 
-ax12 = fig[1,2] = Axis(fig; title="B    Sequence of volleys", titlealign=:left)
-hidedecorations!(ax12)
-
-ax13 = fig[1,3] = Axis(fig; aspect=DataAspect(), backgroundcolor=:transparent)
+ax13 = fig[2,1] = Axis(fig; aspect=DataAspect(), backgroundcolor=:transparent)
 hidedecorations!(ax13)
 
-gl2 = fig[2,1:3] = GridLayout()
-ax21 = gl2[1,1] = Axis(fig; title="C    Same path on different time-scales", titlealign=:center, backgroundcolor=:transparent)
-ax22 = gl2[2,1] = Axis(fig; ylabel="slow", backgroundcolor=:transparent)
-ax23 = gl2[3,1] = Axis(fig; backgroundcolor=:transparent)
+gl = fig[:,2] = GridLayout(height_ratios=[1,1,1, 1,1,1, 1,1,1, 1,1,1])
 
-gl3 = fig[3,1:3] = GridLayout()
-ax31 = gl3[1,1] = Axis(fig; backgroundcolor=:transparent)
-ax32 = gl3[2,1] = Axis(fig; ylabel="fast", backgroundcolor=:transparent)
-ax33 = gl3[3,1] = Axis(fig; backgroundcolor=:transparent)
+ax21 = gl[1,1] = Axis(fig; title="C    Highlighted path at slow speed (duration 200ms)", titlealign=:left, backgroundcolor=:transparent)
+ax22 = gl[2,1] = Axis(fig; ylabel="input spikes", backgroundcolor=:transparent)
+ax23 = gl[3,1] = Axis(fig; backgroundcolor=:transparent)
 
-gl4 = fig[4,1:3] = GridLayout()
-ax41 = gl4[1,1] = Axis(fig; backgroundcolor=:transparent)
-ax42 = gl4[2,1] = Axis(fig; ylabel="replay", backgroundcolor=:transparent)
-ax43 = gl4[3,1] = Axis(fig; backgroundcolor=:transparent, xaxisalign=:right)
+ax2b1 = gl[4,1] = Axis(fig; ylabel=L"V_A", backgroundcolor=:transparent)
+ax2b2 = gl[5,1] = Axis(fig; ylabel=L"V_B", backgroundcolor=:transparent)
+ax2b3 = gl[6,1] = Axis(fig; ylabel=L"V_C", backgroundcolor=:transparent)
+
+ax31 = gl[7,1] = Axis(fig; title="D    Highlighted path at fast speed (duration 100ms)", titlealign=:left,backgroundcolor=:transparent)
+ax32 = gl[8,1] = Axis(fig; ylabel="input spikes", backgroundcolor=:transparent)
+ax33 = gl[9,1] = Axis(fig; backgroundcolor=:transparent)
+
+ax41 = gl[10,1] = Axis(fig; title="E    Fast replay of highlighted path (duration 20ms)", titlealign=:left, backgroundcolor=:transparent)
+ax42 = gl[11,1] = Axis(fig; ylabel="input spikes", backgroundcolor=:transparent)
+ax43 = gl[12,1] = Axis(fig; backgroundcolor=:transparent, xaxisalign=:right)
 spike_axes = [ax21 ax22 ax23 ; ax31 ax32 ax33 ; ax41 ax42 ax43]
+state_axes = [ax2b1, ax2b2, ax2b3]
 
 colsize!(fig.layout, 1, Relative(0.3))
-colsize!(fig.layout, 3, Relative(0.1))
 rowsize!(fig.layout, 1, Aspect(1, grid_params.yscale/grid_params.xscale))
 hideydecorations!.((ax21,ax22,ax23,ax31,ax32,ax33,ax41,ax42,ax43); label=false)
-hidexdecorations!.((ax21,ax22,ax23,ax31,ax32,ax33,ax41,ax42); grid=false)
+hidexdecorations!.((ax21,ax22,ax23,ax2b1,ax2b2,ax2b3,ax31,ax32,ax33,ax41,ax42); grid=false)
+hideydecorations!.((ax2b1,ax2b2,ax2b3); label=false, grid=false)
+ax2b1.bottomspinevisible[]=true
+ax2b2.bottomspinevisible[]=true
+ax2b3.bottomspinevisible[]=true
 
-rowgap!(fig.layout,2,Relative(0.01))
-rowgap!(fig.layout,3,Relative(0.01))
+voltage_values = Dict(voltage_low => 0.0, voltage_elevated => 0.3, voltage_high=>1.0)
+ax2b1.yticks = [voltage_values[voltage_low],voltage_values[voltage_elevated],voltage_values[voltage_high]]
+ax2b2.yticks = [voltage_values[voltage_low],voltage_values[voltage_elevated],voltage_values[voltage_high]]
+ax2b3.yticks = [voltage_values[voltage_low],voltage_values[voltage_elevated],voltage_values[voltage_high]]
 
-rowgap!(gl2,0)
-rowgap!(gl3,0)
-rowgap!(gl4,0)
+rowgap!(gl,Relative(0.01))
+rowgap!(gl,6,Relative(0.05))
+rowgap!(gl,9,Relative(0.05))
+
 
 ## Plot the stochastically sampled paths
 for path in paths[2:end]
@@ -169,13 +176,40 @@ for (i,duration) in enumerate((0.2,0.1,0.02))
     # extract neuron-internal events
     plateau_starts_1 = filter(x->(x.object==:seg1 && x.event==:plateau_starts), logger.data)
     plateau_starts_2 = filter(x->(x.object==:seg2 && x.event==:plateau_starts), logger.data)
+    plateau_ends_1 = filter(x->(x.object==:seg1 && x.event==:plateau_ends), logger.data)
+    plateau_ends_2 = filter(x->(x.object==:seg2 && x.event==:plateau_ends), logger.data)
     plateau_extended_1 = filter(x->(x.object==:seg1 && x.event==:plateau_extended), logger.data)
     plateau_extended_2 = filter(x->(x.object==:seg2 && x.event==:plateau_extended), logger.data)
 
+    # extract the plateau traces of the dendrite segemnts
+    tmp = filter(x->(x.object==:seg1), logger.data)
+    seg_1_state = getindex.(Ref(voltage_values),tmp.state)
+    seg_1_t = collect(tmp.t)
+    pushfirst!(seg_1_state, voltage_values[voltage_low])
+    pushfirst!(seg_1_t, -duration)
+    push!(seg_1_state, seg_1_state[end])
+    push!(seg_1_t, max(0,seg_1_t[end]))
+    
+    tmp = filter(x->(x.object==:seg2), logger.data)
+    seg_2_state = getindex.(Ref(voltage_values),tmp.state)
+    seg_2_t = collect(tmp.t)
+    pushfirst!(seg_2_state, voltage_values[voltage_low])
+    pushfirst!(seg_2_t, -duration)
+    push!(seg_2_state, seg_2_state[end])
+    push!(seg_2_t, max(0,seg_2_t[end]))
+    
+    tmp = filter(x->(x.object==:n), logger.data)
+    seg_3_state = getindex.(Ref(voltage_values),tmp.state)
+    seg_3_t = collect(tmp.t)
+    pushfirst!(seg_3_state, voltage_values[voltage_low])
+    pushfirst!(seg_3_t, -duration)
+    push!(seg_3_state, seg_3_state[end])
+    push!(seg_3_t, max(0,seg_3_t[end]))
+
     for (j,p) in enumerate((plateau_starts_1,plateau_starts_2,spike_times))
         annotations!(spike_axes[i,j], [["A","B","C"][j]], [Point2f0(1000.0 * minimum(p.t .- first_spike),0.0)]; align=(:right,:center), offset=(-10,0), textsize=14)
-        vlines!(spike_axes[i,j], [0.0], color=:black, linestyle=:dot)
-        vlines!(spike_axes[i,j], 1000.0 .* (p.t .- first_spike), color=:black, linewidth=2)
+        vlines!(spike_axes[i,j], 1000.0 .* (p.t .- first_spike), color=j==3 ? :gray : :black, linewidth=2)
+        vlines!(spike_axes[i,j], [0.0], color=:black, linestyle=j==3 ? :solid : :dot)
     end
 
     for (j,p) in enumerate((plateau_extended_1,plateau_extended_2))
@@ -184,19 +218,35 @@ for (i,duration) in enumerate((0.2,0.1,0.02))
         end
     end
 
+    if i==1
+        stairs!(state_axes[1], 1000.0 .* (seg_1_t .- first_spike), seg_1_state, step=:post, color=color_1, linewidth=3)
+        stairs!(state_axes[2], 1000.0 .* (seg_2_t .- first_spike), seg_2_state, step=:post, color=color_2, linewidth=3)
+        stairs!(state_axes[3], 1000.0 .* (seg_3_t .- first_spike), seg_3_state, step=:post, color=color_3, linewidth=3)
+
+        vlines!(state_axes[1], 1000.0 .* (plateau_starts_1.t .- first_spike), color=:black, linewidth=1)
+        vlines!(state_axes[1], 1000.0 .* (plateau_ends_1.t .- first_spike), color=:black, linewidth=1)
+
+        vlines!(state_axes[2], 1000.0 .* (plateau_starts_2.t .- first_spike), color=:black, linewidth=1)
+        vlines!(state_axes[2], 1000.0 .* (plateau_ends_2.t .- first_spike), color=:black, linewidth=1)
+
+        vlines!(state_axes[3], 1000.0 .* (spike_times.t .- first_spike), color=:gray, linewidth=2)
+        vlines!(state_axes[3], [0.0], color=:black)
+    end
+
 end
 
 xlims!(ax43,-0.2,0.05)
-linkxaxes!.(Ref(ax21), (ax22,ax23,ax31,ax32,ax33,ax41,ax42,ax43))
+linkxaxes!.(Ref(ax21), (ax22,ax23,ax2b1,ax2b2,ax2b3,ax31,ax32,ax33,ax41,ax42,ax43))
 ax43.bottomspinevisible[]=true
-ax43.xlabel[]= "spike-aligned time [ms]"
+ax43.xlabel[]= "time before first somatic spike [ms]"
 
 fig
 
 ## Plot the neuron
 plot!(ax13, objects[:n],
-    branch_width=1, 
-    branch_length=8.0, 
+    branch_taper=0.5,
+    branch_width=Dict(:n=>1.0,:seg1=>0.5,:seg2=>0.75), 
+    branch_length=Dict(:n=>5.0, :seg1=>8.0, :seg2=>8.0), 
     color=Dict(:n=>color_3, :seg1=>color_1, :seg2=>color_2)
 )
 
