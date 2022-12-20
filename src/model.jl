@@ -456,7 +456,7 @@ struct Logger
     data::DataFrame
     filter::Function
 
-    function Logger(net::Network{ID,T,WT,IT}; filter=(t,tp,id,x)->true, DT=Union{Bool,VoltageLevel}) where {ID,T,WT,IT}
+    function Logger(net::Network{ID,T,WT,IT}; filter=(t,tp,id,x)->true, DT=Union{Bool,VoltageLevel,Integer}) where {ID,T,WT,IT}
         data = DataFrame(:t=>T[], :event=>Symbol[], :object=>ID[], :state=>DT[])
         new(data, filter)
     end
