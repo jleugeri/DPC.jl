@@ -9,7 +9,7 @@ Utility function to extract and simplify a state trace from the logger.
 This removes redundant events that occur at the same time as others without altering the state.
 """
 function get_trace(id::Function, data)
-    trace = filter(x->(x.object==id), data)
+    trace = filter(id, data)
     return if isempty(trace)
         (t=eltype(data.t)[], state=eltype(data.state)[])
     else
