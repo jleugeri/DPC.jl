@@ -8,7 +8,7 @@ export load_network, save_network, get_trace
 Utility function to extract and simplify a state trace from the logger.
 This removes redundant events that occur at the same time as others without altering the state.
 """
-function get_trace(id, data)
+function get_trace(id::Function, data)
     trace = filter(x->(x.object==id), data)
     return if isempty(trace)
         (t=eltype(data.t)[], state=eltype(data.state)[])
@@ -18,6 +18,7 @@ function get_trace(id, data)
     end
 end
 
+get_trace(id::Symbol, data) = get_trace(x->(x.object==id), data)
 
 """
     load_network(YAML_source)

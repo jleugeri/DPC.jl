@@ -276,8 +276,9 @@ function maybe_on!(obj::Segment, now, queue!, logger!)
         obj.next_downstream.state_seg += 1
         updated = update_state!(obj.next_downstream)
         if ~maybe_on!(obj.next_downstream, now, queue!, logger!) && updated
-            logger!(now, :upstate_start, obj.next_downstream.id, obj.next_downstream.state)
+            logger!(now, :upstate_starts, obj.next_downstream.id, obj.next_downstream.state)
         end
+        logger!(now, :state_seg_changed, obj.next_downstream.id, obj.next_downstream.state_seg)
         
         # Each segment must turn off
         obj.last_activated = now
@@ -308,6 +309,7 @@ function maybe_off!(obj::Segment, now, queue!, logger!)
         if update_state!(obj.next_downstream)
             logger!(now, :upstate_ends, obj.next_downstream.id, obj.next_downstream.state)
         end
+        logger!(now, :state_seg_changed, obj.next_downstream.id, obj.next_downstream.state_seg)
     else
         @debug "$(now): Triggered segment $(obj.id), but it didn't turn off!"
     end
@@ -394,6 +396,7 @@ function on!(obj::Synapse, now, queue!, logger!)
             # inform the target segment about this new EPSP
             obj.target.state_syn += obj.magnitude
             logger!(now, :epsp_starts, obj.id, obj.state)
+            logger!(now, :state_syn_changed, obj.target.id, obj.target.state_syn)
 
             # don't forget to turn off EPSP
             queue!(Event(:epsp_ends, now, now+obj.spike_duration, obj))
@@ -429,6 +432,7 @@ function off!(obj::Synapse, now, queue!, logger!)
         obj.magnitude = zero(obj.magnitude)
         obj.state = false
         logger!(now, :epsp_ends, obj.id, obj.state)
+        logger!(now, :state_syn_changed, obj.target.id, obj.target.state_syn)
         
     else
         @debug "$(now): Triggered synapse $(obj.id), but didn't turn EPSP off!"
